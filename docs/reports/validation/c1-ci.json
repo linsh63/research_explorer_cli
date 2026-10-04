@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "stage": "C1",
+  "status": "pass",
+  "sourceCommit": "132ac5526a1b474f4fe15ad01bd3a56d1b318dfd",
+  "workflow": "C1 Core integration",
+  "runId": 37198428757,
+  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37198428757",
+  "jobs": [
+    {
+      "runner": "ubuntu-24.04",
+      "status": "pass"
+    },
+    {
+      "runner": "macos-14",
+      "status": "pass"
+    }
+  ],
+  "completedAt": "2026-10-04T11:22:00+08:00"
+}
