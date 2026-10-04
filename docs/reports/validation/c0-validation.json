@@ -42,7 +42,7 @@
   },
   "package": {
     "filename": "research-explorer-cli-0.1.0-alpha.4.tgz",
-    "sha256": "10cef68cb9074e9cb65c907cef30b78877100fb46df83ebac9733e5713977857",
+    "sha256": "7cadfd2d002d3a3387ad7dfb15706cac04c09926ce9e5af152eb69df47ea61a2",
     "entries": 78,
     "installedVersion": "1.0.2",
     "commands": [
@@ -84,6 +84,6 @@
     "noCoreInternalImport": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 13630,
-  "recordedAt": "2026-10-04T16:25:51.271Z"
+  "elapsedMs": 13633,
+  "recordedAt": "2026-10-04T16:38:24.099Z"
 }
