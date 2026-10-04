@@ -1,0 +1,40 @@
+name: C1 Core integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  c1:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Research Explorer
+        uses: actions/checkout@v4
+      - name: Checkout pinned Core
+        uses: actions/checkout@v4
+        with:
+          repository: linsh63/auto_research_agent
+          ref: eb954b412b157d595df0ce28be8a079ee67127ff
+          path: core
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - name: Build Core
+        run: npm ci && npm run build
+        working-directory: core
+      - name: Install CLI
+        run: npm ci
+      - name: Unit and C0 regression
+        run: npm run check && npm test && npm run validate:c0
+      - name: Real Core C1 acceptance
+        run: npm run validate:c1
+        env:
+          C1_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+

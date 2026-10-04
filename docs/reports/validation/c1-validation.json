@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "stage": "C1",
+  "status": "pass",
+  "product": "Research Explorer",
+  "platform": "linux/x64",
+  "core": {
+    "serviceVersion": "1.0.0",
+    "schemaVersion": "1.0.0",
+    "restarted": true
+  },
+  "project": {
+    "workspaceId": "workspace:c1-validation",
+    "projectId": "program-c675d062-0a3f-469a-8cdd-77a96fa441fd",
+    "restoredAfterCoreRestart": true,
+    "restoredFromPiSession": true,
+    "restoredFromRecentState": true
+  },
+  "commands": [
+    "research-about",
+    "research-doctor",
+    "research-new",
+    "research-open",
+    "research-status"
+  ],
+  "package": {
+    "filename": "research-explorer-cli-0.1.0-alpha.1.tgz",
+    "sha256": "f7399573eef926efe54e69cab8a05f5aa2736bf2fda3f971421217c4430ae07f",
+    "entries": 30,
+    "statusCommandHandled": true
+  },
+  "assertions": {
+    "autoStart": true,
+    "attach": true,
+    "doctor": true,
+    "tokenExcludedFromSession": true,
+    "tokenExcludedFromState": true,
+    "noModelCall": true,
+    "packageOnlyInstall": true
+  },
+  "elapsedMs": 7910,
+  "recordedAt": "2026-10-04T11:17:50.398Z"
+}

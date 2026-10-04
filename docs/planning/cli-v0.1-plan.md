@@ -1,6 +1,6 @@
 # Research Explorer CLI v0.1 实施规划（v2.0 项目集）
 
-状态：**C0 已完成，C1–C5 待分阶段实施**  
+状态：**C0–C1 已完成，C2–C5 待分阶段实施**
 目标产品仓库：`/data0/linsihan/research-explorer-cli`  
 核心依赖：`auto-research-agent` 公共 SDK/API  
 交互底座：`@earendil-works/pi-coding-agent@1.0.2`
@@ -305,6 +305,8 @@ CLI 不提供粘贴、显示或导出 token 的命令。
 门禁：真实 Pi TUI 中 extension 可加载；package-only 安装可运行；无 Core internal import。
 
 ### C1：Launcher 与 Project 上下文
+
+执行结果：**2026-10-04 通过**。详见 [`../reports/stages/c1-progress.md`](../reports/stages/c1-progress.md) 和 [ADR 002](../architecture/decisions/002-core-service-boundary.md)。
 
 - `rexplore` launcher、Core auto-start/attach、doctor。
 - `/research-new/open/status`。

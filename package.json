@@ -1,6 +1,6 @@
 {
   "name": "research-explorer-cli",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "private": false,
   "type": "module",
   "description": "Research Explorer CLI: a Pi-based interface for the Auto Research Agent core.",
@@ -35,6 +35,7 @@
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "test": "npm run build && node --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "validate:c0": "node scripts/validate-c0.mjs",
+    "validate:c1": "node scripts/validate-c1.mjs",
     "prepack": "npm run build && npm run check:boundaries"
   },
   "dependencies": {

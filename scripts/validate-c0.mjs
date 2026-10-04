@@ -68,7 +68,8 @@ async function verifyPersistentLifecycle(binary, cwd, sessionDir) {
   mkdirSync(sessionDir, { recursive: true });
   const fixtureFile = join(sessionDir, "c0-validation.jsonl");
   writeSessionFixture(fixtureFile, cwd);
-  const first = startRpc(binary, cwd, ["--session-dir", sessionDir, "--session", fixtureFile]);
+  const isolationFlags = ["--research-core-data-dir", join(sessionDir, "core"), "--research-state-file", join(sessionDir, "state.json"), "--research-no-core-autostart"];
+  const first = startRpc(binary, cwd, ["--session-dir", sessionDir, "--session", fixtureFile, ...isolationFlags]);
   try {
     const commands = commandNames(await first.request("get_commands"));
     assert(commands.includes("research-about"), "Research Explorer command was not loaded through Pi RPC");
@@ -85,7 +86,7 @@ async function verifyPersistentLifecycle(binary, cwd, sessionDir) {
     assert(abort.success, "Pi abort path did not acknowledge cancellation");
     await first.close();
 
-    const resumed = startRpc(binary, cwd, ["--session-dir", sessionDir, "--session", sessionFile]);
+    const resumed = startRpc(binary, cwd, ["--session-dir", sessionDir, "--session", sessionFile, ...isolationFlags]);
     try {
       const restoredEntries = await resumed.request("get_entries");
       const contextEntryRestored = hasContextEntry(restoredEntries.data?.entries);
@@ -110,7 +111,15 @@ function writeSessionFixture(path, cwd) {
     timestamp,
     message: { role: "user", content: "C0 persistence fixture; no model invocation.", timestamp: Date.now() },
   };
-  writeFileSync(path, `${JSON.stringify(header)}\n${JSON.stringify(user)}\n`);
+  const context = {
+    type: "custom",
+    customType: "research-explorer.context",
+    id: "c0ctx001",
+    parentId: user.id,
+    timestamp,
+    data: { schemaVersion: 1, phase: "C1", workspaceId: "workspace:c0", projectId: "project-c0", projectTitle: "C0 compatibility fixture", projectStatus: "draft", recordedAt: timestamp },
+  };
+  writeFileSync(path, `${JSON.stringify(header)}\n${JSON.stringify(user)}\n${JSON.stringify(context)}\n`);
 }
 
 function packProject(packRoot) {
@@ -135,7 +144,7 @@ async function verifyPackedInstall(packed, consumer) {
   });
   const binary = process.platform === "win32" ? join(consumer, "node_modules/.bin/rexplore.cmd") : join(consumer, "node_modules/.bin/rexplore");
   const version = execFileSync(binary, ["--version"], { cwd: consumer, encoding: "utf8", timeout: 15_000 }).trim();
-  const rpc = startRpc(binary, consumer, ["--no-session"]);
+  const rpc = startRpc(binary, consumer, ["--no-session", "--research-core-data-dir", join(consumer, "core"), "--research-state-file", join(consumer, "state.json"), "--research-no-core-autostart"]);
   try {
     const commands = commandNames(await rpc.request("get_commands"));
     assert(version === expectedPiVersion, `Packed rexplore used unexpected Pi version: ${version}`);
