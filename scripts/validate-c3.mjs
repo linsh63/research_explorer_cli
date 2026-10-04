@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -39,13 +40,22 @@ try {
   await first.close();
   assert.equal((await jobs.get(jobId)).job.status, "queued", "CLI exit must not cancel persistent Job");
 
-  const appEntry = resolve(dirname(coreEntry), "../public/application.js");
-  const { ResearchApplication } = await import(pathToFileURL(appEntry).href);
-  const application = await ResearchApplication.open({ databasePath, artifactRoot: join(coreDataDir, "artifacts") });
-  try {
-    const worker = application.createLocalWorker({ descriptor: { workerId: "worker:c3-local", protocolVersion: "1", executors: ["python"], capacity: { cpuCores: 2, memoryMiB: 2048, diskMiB: 2048, gpuCount: 0 }, gpuDevices: [], leaseDurationMs: 5_000 }, artifactRoot: join(coreDataDir, "artifacts"), pythonRunnerPath: resolve(dirname(coreEntry), "../../python/worker/runner.py"), heartbeatIntervalMs: 100 });
-    await worker.runOnce();
-  } finally { application.close(); }
+  if (process.platform === "darwin") {
+    const worker = { workerId: "worker:c3-macos-protocol", protocolVersion: "1", executors: ["python"], capacity: { cpuCores: 2, memoryMiB: 2048, diskMiB: 2048, gpuCount: 0 }, gpuDevices: [], leaseDurationMs: 5_000 };
+    const lease = (await workerRequest(discovery, { type: "worker.claim", requestId: "c3-macos-claim", worker })).data.lease;
+    assert.equal(lease.job.id, jobId);
+    await workerRequest(discovery, { type: "worker.log", requestId: "c3-macos-log", jobId, attempt: lease.attempt, workerId: worker.workerId, leaseToken: lease.leaseToken, stream: "progress", message: "progress-c3", data: { platform: "darwin" } });
+    const content = Buffer.from("C3 artifact"), contentHash = createHash("sha256").update(content).digest("hex");
+    await workerRequest(discovery, { type: "worker.complete", requestId: "c3-macos-complete", jobId, attempt: lease.attempt, workerId: worker.workerId, leaseToken: lease.leaseToken, artifacts: [{ name: "result.txt", mediaType: "text/plain", contentHash, bytes: content.length, uri: `cas:sha256:${contentHash}`, access: "project" }] });
+  } else {
+    const appEntry = resolve(dirname(coreEntry), "../public/application.js");
+    const { ResearchApplication } = await import(pathToFileURL(appEntry).href);
+    const application = await ResearchApplication.open({ databasePath, artifactRoot: join(coreDataDir, "artifacts") });
+    try {
+      const worker = application.createLocalWorker({ descriptor: { workerId: "worker:c3-local", protocolVersion: "1", executors: ["python"], capacity: { cpuCores: 2, memoryMiB: 2048, diskMiB: 2048, gpuCount: 0 }, gpuDevices: [], leaseDurationMs: 5_000 }, artifactRoot: join(coreDataDir, "artifacts"), pythonRunnerPath: resolve(dirname(coreEntry), "../../python/worker/runner.py"), heartbeatIntervalMs: 100 });
+      await worker.runOnce();
+    } finally { application.close(); }
+  }
   const completed = await jobs.get(jobId);
   assert.equal(completed.job.status, "succeeded", JSON.stringify(completed)); assert.equal(completed.artifacts.length, 1); assert.equal(completed.artifacts[0].name, "result.txt");
   assert.ok((await jobs.logs(jobId, 1, 200)).logs.some((item) => item.message.includes("progress-c3")));
