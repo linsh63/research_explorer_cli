@@ -1,31 +1,26 @@
 {
   "schemaVersion": 1,
-  "stage": "C2",
+  "stage": "C4",
   "status": "pass",
   "platform": "linux/x64",
-  "entryEquivalence": {
-    "direct": "question.proposed",
-    "candidate": "question.proposed",
-    "auto": "question.proposed",
-    "semanticActionEqual": true
+  "plugins": {
+    "staticBrowseNoExecution": true,
+    "inspected": true,
+    "installed": true,
+    "enabled": true,
+    "permissionExpansionConfirmed": true,
+    "coreVsPiDistinguished": true
   },
-  "candidateUi": {
-    "fixedFallbacks": [
-      "继续用原输入自由聊天",
-      "输入其他行动",
-      "取消"
-    ],
-    "freeInputLast": true
+  "projects": {
+    "forked": true,
+    "bundleV2Exported": true,
+    "bundleImported": true,
+    "missingDependencyVisible": true
   },
-  "gates": {
-    "autoScopeApprovalBlocked": true,
-    "agentScopeApprovalRejected": true,
-    "explicitUserApprovalAccepted": true
-  },
-  "persistence": {
-    "mode": "auto",
-    "conversationSessionId": true,
-    "tokenExcluded": true
+  "isolation": {
+    "sshNotRestored": true,
+    "bearerNotBundled": true,
+    "privateKeyNotBundled": true
   },
   "commands": [
     "research-job-submit",
@@ -61,6 +56,6 @@
     "realPiRpc": true,
     "noModelCall": true
   },
-  "elapsedMs": 2039,
-  "recordedAt": "2026-10-04T16:26:05.603Z"
+  "elapsedMs": 2422,
+  "recordedAt": "2026-10-04T16:26:56.262Z"
 }

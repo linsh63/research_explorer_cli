@@ -1,6 +1,6 @@
 # Research Explorer CLI v0.1 实施规划（v2.0 项目集）
 
-状态：**C0–C2 已完成，C3–C5 待分阶段实施**
+状态：**C0–C4 已完成，C5 待实施**
 目标产品仓库：`/data0/linsihan/research-explorer-cli`  
 核心依赖：`auto-research-agent` 公共 SDK/API  
 交互底座：`@earendil-works/pi-coding-agent@1.0.2`
@@ -328,6 +328,8 @@ CLI 不提供粘贴、显示或导出 token 的命令。
 
 ### C3：Job、事件与远程 Worker
 
+执行结果：**2026-10-05 通过**。详见 [`../reports/stages/c3-progress.md`](../reports/stages/c3-progress.md) 和 [ADR 004](../architecture/decisions/004-jobs-streams-and-secrets.md)。
+
 - SSE 事件/日志、后台 Job、取消和恢复。
 - Artifact 展示。
 - SSH profile/Worker 配置向导。
@@ -336,6 +338,8 @@ CLI 不提供粘贴、显示或导出 token 的命令。
 门禁：退出/restart CLI 后 Job 仍运行；取消、掉线、stale lease 正确；Mac→Linux 小任务可从 CLI 完成。
 
 ### C4：插件、Bundle 与项目管理
+
+执行结果：**2026-10-05 通过**。详见 [`../reports/stages/c4-progress.md`](../reports/stages/c4-progress.md) 和 [ADR 005](../architecture/decisions/005-plugins-and-bundles.md)。
 
 - 插件 search/inspect/install/enable/disable/update。
 - 权限 diff 和显式确认。

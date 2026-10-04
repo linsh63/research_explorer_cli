@@ -8,6 +8,15 @@ import { PUBLIC_SCHEMA_VERSION } from "../core/types.js";
 import { ResearchRuntime } from "../research/runtime.js";
 import type { ConversationOutcome, ExecutionMode } from "../research/types.js";
 import { runCandidateInteraction } from "./candidate-ui.js";
+import { JobRuntime, type JobReadModel } from "../research/jobs.js";
+import { SshRuntime } from "../research/ssh.js";
+import { PluginRuntime } from "../research/plugins.js";
+import { ProjectRuntime } from "../research/projects.js";
+import { registerJobFeatures } from "./job-commands.js";
+import { JobMonitor, type MonitoredJob } from "./job-monitor.js";
+import { registerSshCommands } from "./ssh-commands.js";
+import { registerPluginFeatures } from "./plugin-commands.js";
+import { registerProjectFeatures } from "./project-commands.js";
 import {
   contextFromStatus,
   readRecentContext,
@@ -40,12 +49,27 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     let contextVerified = false;
     let connectionError: string | null = null;
     let snapshot: ProjectStatus | null = null;
+    let sessionContext: ExtensionContext | null = null;
+    let monitoredJobs: MonitoredJob[] = [];
+    const jobMonitor = new JobMonitor((jobs) => {
+      monitoredJobs = jobs;
+      if (sessionContext) updateJobUi(sessionContext);
+    });
 
     registerResearchTools(pi, {
       runtime: activeRuntime,
       sessionId: () => context?.conversationSessionId ?? null,
       onOutcome: applyOutcome,
     });
+    registerJobFeatures(pi, {
+      runtime: requireJobRuntime,
+      activeJobId: () => context?.activeJobId ?? null,
+      track: trackJob,
+      refresh: refreshJob,
+    });
+    registerSshCommands(pi, { runtime: requireSshRuntime });
+    registerPluginFeatures(pi, { runtime: requirePluginRuntime });
+    registerProjectFeatures(pi, { runtime: requireProjectRuntime, open: openProject });
 
     pi.registerEntryRenderer<ResearchContextEntry>(RESEARCH_EXPLORER_ENTRY, (entry, { expanded }, theme) => {
       const data = entry.data;
@@ -65,7 +89,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       description: "Show Research Explorer connection and Project context",
       handler: async (_args, ctx) => {
         updateUi(ctx);
-        ctx.ui.notify(context ? `Research Explorer C2 · ${context.projectTitle} · ${context.mode}` : "Research Explorer C2 · no Project selected", "info");
+        ctx.ui.notify(context ? `Research Explorer C4 · ${context.projectTitle} · ${context.mode}` : "Research Explorer C4 · no Project selected", "info");
       },
     });
 
@@ -82,7 +106,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
               const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
               if (status) {
                 snapshot = status;
-                context = contextFromStatus(status, policy.mode, context.conversationSessionId);
+                context = contextFromStatus(status, policy.mode, context.conversationSessionId, context.jobIds, context.activeJobId);
                 contextVerified = true;
               }
             } catch (error) {
@@ -159,7 +183,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
           ctx.ui.notify("Project was created but its status could not be loaded.", "error");
           return;
         }
-        bind(status, ctx, "manual");
+        bind(status, ctx, "manual", null, [], null);
         ctx.ui.notify(`Created and opened ${status.project.title}.`, "info");
       },
     });
@@ -190,7 +214,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
           ctx.ui.notify(`Project ${projectId} was not found in ${config.workspaceId}.`, "error");
           return;
         }
-        bind(status, ctx, mode, null);
+        bind(status, ctx, mode, null, [], null);
         ctx.ui.notify(`Opened ${status.project.title}.`, "info");
       },
     });
@@ -274,6 +298,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     });
 
     pi.on("session_start", async (_event, ctx) => {
+      sessionContext = ctx;
       config = resolveCoreConfig(pi);
       context = restoreContext(ctx.sessionManager.getBranch()) ?? readRecentContext(config.stateFile);
       contextVerified = false;
@@ -285,7 +310,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
           const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
           if (status) {
             snapshot = status;
-            context = contextFromStatus(status, policy.mode, context.conversationSessionId);
+            context = contextFromStatus(status, policy.mode, context.conversationSessionId, context.jobIds, context.activeJobId);
             contextVerified = true;
           }
           else context = null;
@@ -293,6 +318,9 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       } catch (error) {
         client = null;
         connectionError = safeError(error);
+      }
+      if (client && context && contextVerified) {
+        await jobMonitor.restore(new JobRuntime(client, context.workspaceId, context.projectId), context.jobIds);
       }
       updateUi(ctx);
     });
@@ -322,18 +350,22 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         }
       }
       const researchContext = context && contextVerified
-        ? `Research Explorer C2 Project snapshot: title=${context.projectTitle}; id=${context.projectId}; workspace=${context.workspaceId}; status=${snapshot?.project.status ?? context.projectStatus}; mode=${context.mode}; questions=${snapshot?.questions.length ?? 0}; events=${snapshot?.persistence.eventCount ?? 0}. Use research tools for current Core state. All mutations must use Core ResearchAction paths. Never claim a gate passed unless Core confirms it.`
+        ? `Research Explorer C4 Project snapshot: title=${context.projectTitle}; id=${context.projectId}; workspace=${context.workspaceId}; status=${snapshot?.project.status ?? context.projectStatus}; mode=${context.mode}; questions=${snapshot?.questions.length ?? 0}; events=${snapshot?.persistence.eventCount ?? 0}; trackedJobs=${context.jobIds.length}; activeJob=${context.activeJobId ?? "none"}. Use research tools for current Core state. All mutations must use public Core paths. Never claim a gate, Job, plugin or dependency succeeded unless Core confirms it.`
         : context
-          ? `Research Explorer C2 restored an unverified Project binding for ${context.projectId}, but current Core state is unavailable. Do not rely on its saved title or status and do not claim that research state was read or changed.`
-          : `Research Explorer C2 has no active Project${connectionError ? " and Core is unavailable" : ""}. Do not claim that research state was read or changed.`;
+          ? `Research Explorer C4 restored an unverified Project binding for ${context.projectId}, but current Core state is unavailable. Do not rely on its saved title, status or Job state and do not claim that research state was read or changed.`
+          : `Research Explorer C4 has no active Project${connectionError ? " and Core is unavailable" : ""}. Do not claim that research state was read or changed.`;
       return { systemPrompt: `${event.systemPrompt}\n\n${researchContext}` };
     });
 
-    pi.on("turn_start", async (_event, ctx) => ctx.ui.setStatus("research-explorer", "C2 · Pi turn running"));
+    pi.on("turn_start", async (_event, ctx) => ctx.ui.setStatus("research-explorer", "C4 · Pi turn running"));
     pi.on("turn_end", async (_event, ctx) => updateUi(ctx));
     pi.on("session_shutdown", async (_event, ctx) => {
+      jobMonitor.shutdown();
+      sessionContext = null;
       ctx.ui.setStatus("research-explorer", undefined);
       ctx.ui.setWidget("research-explorer", undefined);
+      ctx.ui.setStatus("research-jobs", undefined);
+      ctx.ui.setWidget("research-jobs", undefined);
     });
 
     async function requireClient(ctx: ExtensionContext): Promise<CoreConnection | null> {
@@ -367,7 +399,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         try {
           const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
           snapshot = status;
-          context = contextFromStatus(status, policy.mode, context.conversationSessionId);
+          context = contextFromStatus(status, policy.mode, context.conversationSessionId, context.jobIds, context.activeJobId);
           contextVerified = true;
           persistContext(ctx);
         } catch (error) {
@@ -378,19 +410,75 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       return runtime;
     }
 
+    async function requireJobRuntime(ctx: ExtensionContext): Promise<JobRuntime | null> {
+      const runtime = await requireRuntime(ctx);
+      return runtime && client && context ? new JobRuntime(client, context.workspaceId, context.projectId) : null;
+    }
+
+    async function requireSshRuntime(ctx: ExtensionContext): Promise<SshRuntime | null> {
+      const runtime = await requireRuntime(ctx);
+      return runtime && client && context ? new SshRuntime(client, context.workspaceId, context.projectId) : null;
+    }
+
+    async function requirePluginRuntime(ctx: ExtensionContext): Promise<PluginRuntime | null> {
+      const runtime = await requireRuntime(ctx);
+      return runtime && client && context ? new PluginRuntime(client, context.workspaceId, context.projectId) : null;
+    }
+
+    async function requireProjectRuntime(ctx: ExtensionContext): Promise<ProjectRuntime | null> {
+      const runtime = await requireRuntime(ctx);
+      return runtime && client && context ? new ProjectRuntime(client, context.workspaceId, context.projectId) : null;
+    }
+
+    async function openProject(projectId: string, ctx: ExtensionContext): Promise<void> {
+      const activeClient = await requireClient(ctx);
+      if (!activeClient) return;
+      const [status, policy] = await Promise.all([
+        queryProject(activeClient, config.workspaceId, projectId),
+        new ResearchRuntime(activeClient, config.workspaceId, projectId).policy(),
+      ]);
+      if (!status) throw new Error(`Project ${projectId} is unavailable in ${config.workspaceId}`);
+      bind(status, ctx, policy.mode, null, [], null);
+    }
+
+    async function trackJob(jobId: string, ctx: ExtensionContext): Promise<void> {
+      const runtime = await requireJobRuntime(ctx);
+      if (!runtime || !context) return;
+      context = { ...context, jobIds: [...new Set([...context.jobIds, jobId])].slice(-100), activeJobId: jobId, recordedAt: new Date().toISOString() };
+      persistContext(ctx);
+      await jobMonitor.track(runtime, jobId);
+    }
+
+    async function refreshJob(jobId: string, ctx: ExtensionContext): Promise<JobReadModel | null> {
+      const runtime = await requireJobRuntime(ctx);
+      if (!runtime) return null;
+      try {
+        const state = await jobMonitor.refresh(runtime, jobId);
+        if (context && !context.jobIds.includes(jobId)) {
+          context = { ...context, jobIds: [...context.jobIds, jobId].slice(-100), activeJobId: jobId, recordedAt: new Date().toISOString() };
+          persistContext(ctx);
+        }
+        return { job: state.job, artifacts: state.artifacts };
+      } catch (error) {
+        ctx.ui.notify(`Job refresh failed: ${safeError(error)}`, "error");
+        return null;
+      }
+    }
+
     async function applyOutcome(outcome: ConversationOutcome | null, ctx: ExtensionContext): Promise<void> {
       const runtime = activeRuntime();
       if (!runtime || !context) return;
       const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
       snapshot = status;
-      context = contextFromStatus(status, outcome?.policy.mode ?? policy.mode, outcome?.sessionId ?? context.conversationSessionId);
+      context = contextFromStatus(status, outcome?.policy.mode ?? policy.mode, outcome?.sessionId ?? context.conversationSessionId, context.jobIds, context.activeJobId);
       contextVerified = true;
       persistContext(ctx);
     }
 
-    function bind(status: ProjectStatus, ctx: ExtensionContext, mode: ExecutionMode = "manual", sessionId: string | null = null): void {
+    function bind(status: ProjectStatus, ctx: ExtensionContext, mode: ExecutionMode = "manual", sessionId: string | null = null, jobIds: string[] = context?.jobIds ?? [], activeJobId: string | null = context?.activeJobId ?? null): void {
+      if (context && context.projectId !== status.project.id) jobMonitor.reset();
       snapshot = status;
-      context = contextFromStatus(status, mode, sessionId);
+      context = contextFromStatus(status, mode, sessionId, jobIds, activeJobId);
       contextVerified = true;
       persistContext(ctx);
     }
@@ -407,11 +495,27 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       ctx.ui.setTitle(context ? `Research Explorer · ${context.projectTitle}` : "Research Explorer");
       ctx.ui.setStatus(
         "research-explorer",
-        context && contextVerified ? `C2 · ${context.mode} · ${context.projectStatus} · ${shortId(context.projectId)}` : context ? `C2 · unverified · ${shortId(context.projectId)}` : connected ? "C2 · Core connected" : "C2 · Core unavailable",
+        context && contextVerified ? `C4 · ${context.mode} · ${context.projectStatus} · ${shortId(context.projectId)}` : context ? `C4 · unverified · ${shortId(context.projectId)}` : connected ? "C4 · Core connected" : "C4 · Core unavailable",
       );
       ctx.ui.setWidget("research-explorer", context
-        ? ["Research Explorer C2", contextVerified ? context.projectTitle : "Saved Project binding (unverified)", `${contextVerified ? `${context.projectStatus} · ${context.mode}` : "Core unavailable"} · ${context.workspaceId}`, context.projectId]
-        : ["Research Explorer C2", connected ? "Core connected" : "Core unavailable", config?.workspaceId ?? "workspace:default", connectionError ? truncate(connectionError, 120) : "No Project selected"]);
+        ? ["Research Explorer C4", contextVerified ? context.projectTitle : "Saved Project binding (unverified)", `${contextVerified ? `${context.projectStatus} · ${context.mode}` : "Core unavailable"} · ${context.workspaceId}`, context.projectId]
+        : ["Research Explorer C4", connected ? "Core connected" : "Core unavailable", config?.workspaceId ?? "workspace:default", connectionError ? truncate(connectionError, 120) : "No Project selected"]);
+      updateJobUi(ctx);
+    }
+
+    function updateJobUi(ctx: ExtensionContext): void {
+      if (!monitoredJobs.length) {
+        ctx.ui.setStatus("research-jobs", undefined);
+        ctx.ui.setWidget("research-jobs", undefined);
+        return;
+      }
+      const active = context?.activeJobId ? monitoredJobs.find((item) => item.job.id === context?.activeJobId) : monitoredJobs[0];
+      const running = monitoredJobs.filter((item) => item.job.status === "queued" || item.job.status === "running").length;
+      ctx.ui.setStatus("research-jobs", `${running} active Job${running === 1 ? "" : "s"}`);
+      ctx.ui.setWidget("research-jobs", [
+        `Jobs · ${monitoredJobs.length} tracked · ${running} active`,
+        ...(active ? [`${active.job.id} · ${active.job.status} · ${active.connection}`, active.lastLog ? truncate(active.lastLog, 120) : `${active.artifacts.length} Artifact(s)`] : []),
+      ], { placement: "belowEditor" });
     }
   };
 }

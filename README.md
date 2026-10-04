@@ -10,7 +10,7 @@ The product reuses Pi's TUI, model authentication, sessions, streaming, tools, s
 
 ## Current status
 
-C0 through C2 are complete. Research Explorer can connect to Core, manage Project context and use manual, candidate or bounded auto research interaction.
+C0 through C4 are complete. Research Explorer supports Project context, research interaction modes, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
 
 ```bash
 npm ci
@@ -18,6 +18,8 @@ npm test
 npm run validate:c0
 npm run validate:c1
 npm run validate:c2
+npm run validate:c3
+npm run validate:c4
 node dist/launcher.js --version
 ```
 
@@ -44,6 +46,9 @@ Inside Research Explorer:
 /research-status
 /research-mode candidate
 /research-next
+/research-job-status
+/research-plugin-search vision
+/research-dependencies
 ```
 
 Later runs use the saved Core discovery and recent Project automatically. Use `/research-open <project-id>` to switch Projects.

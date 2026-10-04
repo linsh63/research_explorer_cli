@@ -1,0 +1,24 @@
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { safeError } from "../core/client.js";
+import { ProjectRuntime } from "../research/projects.js";
+
+export interface ProjectCommandHost {
+  runtime(ctx: ExtensionContext): Promise<ProjectRuntime | null>;
+  open(projectId: string, ctx: ExtensionContext): Promise<void>;
+}
+
+export function registerProjectFeatures(pi: ExtensionAPI, host: ProjectCommandHost): void {
+  pi.registerCommand("research-fork", { description: "Fork the active Project: /research-fork <branch-name> <reason>", handler: async (args, ctx) => { const runtime = await host.runtime(ctx); if (!runtime) return; const [branchName, ...reasonParts] = args.trim().split(/\s+/), reason = reasonParts.join(" "); if (!branchName || reason.length < 10) return ctx.ui.notify("Usage: /research-fork <branch-name> <reason of at least 10 characters>", "warning"); if (!(await ctx.ui.confirm("Fork research Project?", `${branchName}\n${reason}`))) return; try { const data = await runtime.fork(branchName, reason), projectId = data.project?.id; if (!projectId) throw new Error("Core did not return the forked Project ID"); await host.open(projectId, ctx); ctx.ui.notify(`Forked and opened ${projectId}.`, "info"); } catch (error) { fail(ctx, "Project fork", error); } } });
+
+  pi.registerCommand("research-bundle-export", { description: "Export Bundle v2: /research-bundle-export <path> [embed|metadata]", handler: async (args, ctx) => { const runtime = await host.runtime(ctx); if (!runtime) return; const [pathInput, policyRaw] = args.trim().split(/\s+/), policy = policyRaw === "metadata" ? "metadata" : "embed"; if (!pathInput) return ctx.ui.notify("Export path is required.", "warning"); const path = resolve(ctx.cwd, pathInput); if (existsSync(path) && !(await ctx.ui.confirm("Overwrite Bundle file?", path))) return; try { const bundle = await runtime.exportBundle(policy); const serialized = `${JSON.stringify(bundle, null, 2)}\n`; if (containsRawSecret(serialized)) throw new Error("Bundle contains a secret-like value and was not written"); writeAtomic(path, serialized); ctx.ui.notify(`Bundle v2 exported: ${path} · ${Buffer.byteLength(serialized)} bytes`, "info"); } catch (error) { fail(ctx, "Bundle export", error); } } });
+
+  pi.registerCommand("research-bundle-import", { description: "Import Bundle v2: /research-bundle-import <path>", handler: async (args, ctx) => { const runtime = await host.runtime(ctx); if (!runtime || !args.trim()) return ctx.ui.notify("Bundle path is required.", "warning"); const path = resolve(ctx.cwd, args.trim()); try { if (statSync(path).size > 100_000_000) throw new Error("Bundle exceeds 100 MB CLI limit"); const bundle = JSON.parse(readFileSync(path, "utf8")); if (!(await ctx.ui.confirm("Import research Bundle?", `Source Project: ${bundle.source?.projectId ?? "unknown"}\nPlugin locks: ${bundle.pluginLocks?.length ?? 0}\nArtifacts: ${bundle.artifacts?.length ?? 0}\nSSH, OAuth and secret environment state will not be restored.`))) return; const data = await runtime.importBundle(bundle), projectId = data.project?.id; if (!projectId) throw new Error("Core did not return the imported Project ID"); await host.open(projectId, ctx); ctx.ui.notify(`Bundle imported · compatibility: ${data.compatibility?.status ?? "unknown"}`, "info"); } catch (error) { fail(ctx, "Bundle import", error); } } });
+
+  pi.registerCommand("research-dependencies", { description: "Show imported plugin and Artifact dependency status", handler: async (_args, ctx) => { const runtime = await host.runtime(ctx); if (!runtime) return; try { const data = await runtime.dependencies(); const plugins = (data.plugins ?? []).map((item: any) => `${item.pluginId}@${item.version} · ${item.status}`).join("\n") || "No plugin locks"; const artifacts = (data.artifacts ?? []).map((item: any) => `${String(item.contentHash).slice(0, 12)}… · ${item.access} · ${item.status}`).join("\n") || "No Artifact dependencies"; ctx.ui.notify(`Dependencies · ${data.lastImport?.status ?? "native"}\nPlugins:\n${plugins}\nArtifacts:\n${artifacts}`.slice(0, 6000), "info"); } catch (error) { fail(ctx, "Dependency query", error); } } });
+}
+
+function writeAtomic(path: string, value: string) { mkdirSync(dirname(path), { recursive: true }); const temporary = `${path}.${process.pid}.tmp`; writeFileSync(temporary, value, { mode: 0o600 }); renameSync(temporary, path); }
+function containsRawSecret(value: string): boolean { return /sk-[A-Za-z0-9_-]{16,}|-----BEGIN (?:RSA|OPENSSH|EC) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}/.test(value); }
+function fail(ctx: ExtensionContext, operation: string, error: unknown) { ctx.ui.notify(`${operation} failed: ${safeError(error)}`, "error"); }

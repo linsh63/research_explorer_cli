@@ -8,6 +8,8 @@ import type {
   CoreHealth,
   CoreResult,
   DoctorReport,
+  CoreStreamEvent,
+  CoreStreamOptions,
   ServiceCapabilities,
 } from "./types.js";
 import { CORE_SERVICE_VERSION, PUBLIC_SCHEMA_VERSION } from "./types.js";
@@ -52,6 +54,37 @@ class HttpCoreConnection implements CoreConnection {
 
   query<T = unknown>(query: unknown): Promise<CoreResult<T>> {
     return request<CoreResult<T>>(this.baseUrl, this.token, "/v1/queries", this.timeoutMs, query);
+  }
+
+  async *stream(options: CoreStreamOptions): AsyncGenerator<CoreStreamEvent> {
+    const params = new URLSearchParams({
+      workspaceId: options.workspaceId,
+      projectId: options.projectId,
+      actorId: options.actorId ?? "user:research-explorer",
+      fromSequence: String(options.fromSequence ?? 1),
+      logFrom: String(options.logFrom ?? 1),
+    });
+    if (options.jobId) params.set("jobId", options.jobId);
+    const response = await openStream(`${this.baseUrl}/v1/stream?${params}`, this.token, this.timeoutMs, options.signal);
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let current = { event: "message", id: null as string | null, data: [] as string[] };
+    for await (const chunk of response) {
+      buffer += decoder.decode(chunk as Buffer, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line === "") {
+          if (current.data.length) {
+            const raw = current.data.join("\n");
+            yield { event: current.event, id: current.id, data: JSON.parse(raw) };
+          }
+          current = { event: "message", id: null, data: [] };
+        } else if (line.startsWith("event:")) current.event = line.slice(6).trim();
+        else if (line.startsWith("id:")) current.id = line.slice(3).trim();
+        else if (line.startsWith("data:")) current.data.push(line.slice(5).trimStart());
+      }
+    }
   }
 }
 
@@ -204,6 +237,7 @@ function findOnPath(name: string): string | null {
 
 async function launchCore(entry: string, config: CoreConfig): Promise<void> {
   const coreArgs = ["--database", config.databasePath, "--data-dir", config.dataDir, "--port", "0"];
+  if (config.permissions?.length) coreArgs.push("--permissions", config.permissions.join(","));
   const command = /\.(?:c|m)?js$/.test(entry) ? process.execPath : entry;
   const args = command === process.execPath ? [entry, ...coreArgs] : coreArgs;
   await new Promise<void>((resolveLaunch, reject) => {
@@ -260,6 +294,26 @@ function unavailable(error: unknown): CoreConnectionError {
   return error instanceof CoreConnectionError
     ? error
     : new CoreConnectionError(`Core Service is unavailable: ${safeError(error)}`, "unavailable");
+}
+
+function openStream(url: string, token: string, timeoutMs: number, signal?: AbortSignal): Promise<import("node:http").IncomingMessage> {
+  return new Promise((resolveStream, reject) => {
+    let incoming: import("node:http").IncomingMessage | null = null;
+    const outgoing = httpRequest(url, { headers: { authorization: `Bearer ${token}`, accept: "text/event-stream" } }, (response) => {
+      incoming = response;
+      const status = response.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        response.resume();
+        reject(new CoreConnectionError(`Core stream returned HTTP ${status}`, status === 401 || status === 403 ? "authentication" : "unavailable"));
+      } else resolveStream(response);
+    });
+    const abort = () => { incoming?.destroy(); outgoing.destroy(new DOMException("Aborted", "AbortError")); };
+    if (signal?.aborted) abort();
+    else signal?.addEventListener("abort", abort, { once: true });
+    outgoing.setTimeout(timeoutMs, () => outgoing.destroy(new Error("Core stream connection timed out")));
+    outgoing.once("error", (error) => reject(unavailable(error)));
+    outgoing.end();
+  });
 }
 
 export function safeError(error: unknown): string {

@@ -1,4 +1,4 @@
-name: C0-C2 integration
+name: C0-C4 integration
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  c2:
+  c4:
     strategy:
       fail-fast: false
       matrix:
@@ -33,11 +33,10 @@ jobs:
         run: npm ci
       - name: Unit and C0 regression
         run: npm run check && npm test && npm run validate:c0
-      - name: Real Core C1 acceptance
-        run: npm run validate:c1
+      - name: Real Core C1-C4 acceptance
+        run: npm run validate:c1 && npm run validate:c2 && npm run validate:c3 && npm run validate:c4
         env:
           C1_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
-      - name: Real Core C2 acceptance
-        run: npm run validate:c2
-        env:
           C2_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+          C3_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+          C4_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js

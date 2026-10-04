@@ -12,6 +12,7 @@ export function registerCoreFlags(pi: ExtensionAPI): void {
   pi.registerFlag("research-no-core-autostart", { type: "boolean", description: "Only attach to an existing Core Service" });
   pi.registerFlag("research-workspace", { type: "string", description: "Default research Workspace ID" });
   pi.registerFlag("research-state-file", { type: "string", description: "Non-sensitive recent Project state file" });
+  pi.registerFlag("research-core-permissions", { type: "string", description: "Explicit Core permission allowlist (comma separated)" });
 }
 
 export function resolveCoreConfig(pi: Pick<ExtensionAPI, "getFlag">, env: NodeJS.ProcessEnv = process.env): CoreConfig {
@@ -26,11 +27,16 @@ export function resolveCoreConfig(pi: Pick<ExtensionAPI, "getFlag">, env: NodeJS
     timeoutMs: Number.isFinite(timeout) && timeout >= 500 && timeout <= 120_000 ? timeout : DEFAULT_TIMEOUT_MS,
     workspaceId: stringFlag(pi, "research-workspace") ?? env.RESEARCH_EXPLORER_WORKSPACE ?? "workspace:default",
     stateFile: resolve(stringFlag(pi, "research-state-file") ?? env.RESEARCH_EXPLORER_STATE_FILE ?? join(productDir, "state.json")),
+    permissions: parsePermissions(stringFlag(pi, "research-core-permissions") ?? env.RESEARCH_EXPLORER_CORE_PERMISSIONS),
   };
+}
+
+function parsePermissions(value: string | undefined): string[] {
+  const allowed = new Set(["filesystem.read", "filesystem.write", "network", "process", "gpu", "model", "secrets", "confirmation", "host.full"]);
+  return [...new Set((value ?? "").split(",").map((item) => item.trim()).filter((item) => allowed.has(item)))];
 }
 
 function stringFlag(pi: Pick<ExtensionAPI, "getFlag">, name: string): string | undefined {
   const value = pi.getFlag(name);
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
-

@@ -11,12 +11,32 @@
   },
   "project": {
     "workspaceId": "workspace:c1-validation",
-    "projectId": "program-31945ba9-3e01-4227-b01b-369a0b3f8c3f",
+    "projectId": "program-b16846a1-e06c-4585-b72e-f4b0afea852e",
     "restoredAfterCoreRestart": true,
     "restoredFromPiSession": true,
     "restoredFromRecentState": true
   },
   "commands": [
+    "research-job-submit",
+    "research-job-status",
+    "research-job-logs",
+    "research-job-cancel",
+    "research-job-retry",
+    "research-ssh-setup",
+    "research-ssh-status",
+    "research-plugin-search",
+    "research-plugin-inspect",
+    "research-plugin-source-add",
+    "research-plugin-source-refresh",
+    "research-plugin-install",
+    "research-plugin-enable",
+    "research-plugin-disable",
+    "research-plugin-remove",
+    "research-plugin-update",
+    "research-fork",
+    "research-bundle-export",
+    "research-bundle-import",
+    "research-dependencies",
     "research-about",
     "research-doctor",
     "research-new",
@@ -26,9 +46,9 @@
     "research-next"
   ],
   "package": {
-    "filename": "research-explorer-cli-0.1.0-alpha.2.tgz",
-    "sha256": "82b7aebed36b66361f14dd81e45bd5e4557885c1f5754ab821cb9f7eafa66c98",
-    "entries": 44,
+    "filename": "research-explorer-cli-0.1.0-alpha.4.tgz",
+    "sha256": "10cef68cb9074e9cb65c907cef30b78877100fb46df83ebac9733e5713977857",
+    "entries": 78,
     "statusCommandHandled": true
   },
   "assertions": {
@@ -40,6 +60,6 @@
     "noModelCall": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 9531,
-  "recordedAt": "2026-10-04T11:50:22.500Z"
+  "elapsedMs": 10532,
+  "recordedAt": "2026-10-04T16:26:02.728Z"
 }

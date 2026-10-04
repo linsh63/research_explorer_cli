@@ -9,6 +9,7 @@ export interface CoreConfig {
   timeoutMs: number;
   workspaceId: string;
   stateFile: string;
+  permissions: string[];
 }
 
 export interface ServiceCapabilities {
@@ -66,11 +67,27 @@ export interface DoctorReport {
   error: string | null;
 }
 
+export interface CoreStreamOptions {
+  workspaceId: string;
+  projectId: string;
+  actorId?: string;
+  fromSequence?: number;
+  jobId?: string;
+  logFrom?: number;
+  signal?: AbortSignal;
+}
+
+export interface CoreStreamEvent {
+  event: string;
+  id: string | null;
+  data: unknown;
+}
+
 export interface CoreConnection {
   readonly baseUrl: string;
   readonly capabilities: ServiceCapabilities;
   health(): Promise<CoreHealth>;
   execute<T = unknown>(command: unknown): Promise<CoreResult<T>>;
   query<T = unknown>(query: unknown): Promise<CoreResult<T>>;
+  stream(options: CoreStreamOptions): AsyncGenerator<CoreStreamEvent>;
 }
-

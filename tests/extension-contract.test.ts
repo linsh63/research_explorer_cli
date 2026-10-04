@@ -7,6 +7,7 @@ import { createResearchExplorerExtension, RESEARCH_EXPLORER_ENTRY } from "../src
 import type { CoreConnection, DoctorReport, ProjectStatus } from "../src/core/types.js";
 import { CANDIDATE_FALLBACK_OPTIONS } from "../src/extension/candidate-ui.js";
 import type { ExecutionMode, ResearchAction } from "../src/research/types.js";
+import { SecretInput } from "../src/extension/secret-input.js";
 
 function projectStatus(overrides: Partial<ProjectStatus["project"]> = {}): ProjectStatus {
   return {
@@ -54,6 +55,7 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
   const requests: any[] = [];
   const status = projectStatus();
   const candidateAction = action(candidateType);
+  const job = { id: "job-c3", workspaceId: status.workspaceId, projectId: status.project.id, status: "succeeded", spec: {}, currentAttempt: 1, cancelRequested: false, failureClass: null, failureMessage: null, createdAt: "now", updatedAt: "now", startedAt: "now", finishedAt: "now" };
   const policy = () => ({ mode, maxAutoActionsPerTurn: mode === "auto" ? 1 : 0, maxKnownCostUsdPerAction: 0, autoAllowedActionTypes: ["question.propose", "question.select"], updatedAt: "now" });
   const client: CoreConnection = {
     baseUrl: "http://127.0.0.1:4321",
@@ -71,6 +73,9 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
       }
       if (input.type === "candidate.choose") return { status: "accepted", projectId: status.project.id, data: { sessionId: "conversation-1", reply: "Executed", executedAction: candidateAction, actionResult: {}, candidates: null, policy: policy() }, error: null };
       if (input.type === "action.execute") return { status: "accepted", projectId: status.project.id, data: { action: input.payload.action, result: {} }, error: null };
+      if (input.type === "job.submit") return { status: "accepted", projectId: status.project.id, data: { job }, error: null };
+      if (input.type === "job.cancel") return { status: "accepted", projectId: status.project.id, data: { job: { ...job, status: "cancelled" } }, error: null };
+      if (input.type === "job.retry") return { status: "accepted", projectId: status.project.id, data: { job: { ...job, status: "queued", finishedAt: null } }, error: null };
       throw new Error(`Unexpected execute ${input.type}`);
     },
     async query(input: any) {
@@ -79,9 +84,12 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
         : input.type === "policy.get" ? policy()
           : input.type === "project.events" ? { events: [], nextSequence: null }
             : input.type === "conversation.get" ? { latestCandidates: { candidates: [{ id: "candidate-1", title: candidateAction.title, action: candidateAction }] } }
+              : input.type === "job.get" ? { job, artifacts: [] }
+                : input.type === "job.logs" ? { jobId: job.id, logs: [], nextSequence: null }
               : null;
       return { status: "ok", projectId: status.project.id, data, error: null };
     },
+    async *stream() {},
   };
   return { client, requests, policy };
 }
@@ -90,7 +98,7 @@ function savedContext(mode: ExecutionMode = "manual") {
   return { schemaVersion: 1, phase: "C2", workspaceId: "workspace:default", projectId: "project-c2", projectTitle: "Saved Project", projectStatus: "draft", mode, conversationSessionId: null, recordedAt: "earlier" };
 }
 
-function harness(options: { entries?: unknown[]; flags?: Record<string, boolean | string>; mode?: ExecutionMode; candidateType?: ResearchAction["type"]; connectError?: Error; selections?: string[]; confirmations?: boolean[] } = {}) {
+function harness(options: { entries?: unknown[]; flags?: Record<string, boolean | string>; mode?: ExecutionMode; candidateType?: ResearchAction["type"]; connectError?: Error; selections?: string[]; confirmations?: boolean[]; extensionMode?: "tui" | "rpc" } = {}) {
   const commands = new Map<string, any>();
   const tools = new Map<string, any>();
   const handlers = new Map<string, any>();
@@ -114,9 +122,13 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
   };
   createResearchExplorerExtension({ connect: async () => { if (options.connectError) throw options.connectError; return fake.client; }, diagnose: async () => doctor })(pi as any);
   const ctx = {
+    mode: options.extensionMode ?? "tui",
+    cwd: directoryForTests(),
     sessionManager: { getBranch: () => options.entries ?? [] },
     ui: {
       input: async () => undefined,
+      editor: async () => undefined,
+      custom: async () => null,
       select: async (title: string, values: string[]) => { uiCalls.push(["select", title, values]); return selections.shift(); },
       confirm: async (...args: unknown[]) => { uiCalls.push(["confirm", ...args]); return confirmations.shift() ?? false; },
       notify: (...args: unknown[]) => uiCalls.push(["notify", ...args]),
@@ -128,15 +140,15 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
   return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, uiCalls, ctx };
 }
 
-test("C2 registers bounded commands, research tools and input routing", () => {
+test("C4 registers Project, Job, SSH, plugin commands and bounded tools", () => {
   const h = harness();
-  assert.deepEqual([...h.commands.keys()], ["research-about", "research-doctor", "research-new", "research-open", "research-status", "research-mode", "research-next"]);
-  assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action"]);
+  for (const command of ["research-job-submit", "research-ssh-setup", "research-plugin-search", "research-plugin-install", "research-plugin-update", "research-fork", "research-bundle-export", "research-bundle-import", "research-dependencies", "research-mode"]) assert.ok(h.commands.has(command), command);
+  assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action", "research_job", "research_plugins"]);
   assert.ok(h.renderers.has(RESEARCH_EXPLORER_ENTRY));
   for (const event of ["session_start", "input", "before_agent_start", "turn_start", "turn_end", "session_shutdown"]) assert.ok(h.handlers.has(event), event);
 });
 
-test("research-new persists a C2 binding without credentials", async () => {
+test("research-new persists a C4 binding without credentials", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-create-"));
   try {
     const stateFile = join(directory, "state.json");
@@ -144,10 +156,49 @@ test("research-new persists a C2 binding without credentials", async () => {
     await h.handlers.get("session_start")({}, h.ctx);
     await h.commands.get("research-new").handler("C2 Project", h.ctx);
     const persisted = JSON.parse(readFileSync(stateFile, "utf8"));
-    assert.equal(persisted.phase, "C2");
+    assert.equal(persisted.phase, "C4");
     assert.equal(persisted.mode, "manual");
     assert.doesNotMatch(JSON.stringify(persisted), /token|secret|password|bearer|authorization/i);
   } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("Job submission persists the public Job ID and excludes secret fields", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "rexplore-c3-job-"));
+  try {
+    const stateFile = join(directory, "state.json");
+    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext() }], flags: { "research-state-file": stateFile }, confirmations: [true] });
+    await h.handlers.get("session_start")({}, h.ctx);
+    const spec = { name: "test", dataRole: "exploration", studyId: null, execution: { kind: "bubblewrap", workspace: directory, command: "/bin/true", args: [], env: {}, artifactPaths: [] }, resources: { cpuCores: 1, memoryMiB: 128, diskMiB: 128, gpuCount: 0 }, limits: { wallTimeMs: 1000, cpuTimeSeconds: 1, maxOutputBytes: 1000, maxArtifactBytes: 1000 }, priority: 0, resumable: true, maxAttempts: 1, executionPhase: "general" };
+    await h.commands.get("research-job-submit").handler(JSON.stringify(spec), h.ctx);
+    const persisted = JSON.parse(readFileSync(stateFile, "utf8"));
+    assert.deepEqual(persisted.jobIds, ["job-c3"]);
+    assert.equal(persisted.activeJobId, "job-c3");
+    assert.doesNotMatch(JSON.stringify(persisted), /confirmationToken|bearer|password/i);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("confirmation Job refuses non-TUI token input", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "rexplore-c3-confirmation-"));
+  try {
+    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext() }], flags: { "research-state-file": join(directory, "state.json") }, confirmations: [true], extensionMode: "rpc" });
+    await h.handlers.get("session_start")({}, h.ctx);
+    const spec = { name: "confirm", dataRole: "confirmation", studyId: "study-1", execution: { kind: "bubblewrap" } };
+    await h.commands.get("research-job-submit").handler(JSON.stringify(spec), h.ctx);
+    assert.equal(h.requests.some((item) => item.type === "job.submit"), false);
+    assert.ok(h.uiCalls.some((call) => call[0] === "notify" && String(call[1]).includes("interactive TUI")));
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("confirmation token component masks every typed character", () => {
+  let submitted: string | null = null;
+  const component = new SecretInput({ requestRender() {} } as any, { fg: (_color: string, text: string) => text } as any, (value) => { submitted = value; });
+  component.handleInput("confirmation-value-1234567890");
+  const rendered = component.render(80).join("\n");
+  assert.doesNotMatch(rendered, /confirmation-value|1234567890/);
+  assert.match(rendered, /••••/);
+  component.handleInput("\r");
+  assert.equal(submitted, "confirmation-value-1234567890");
+  assert.doesNotMatch(component.render(80).join("\n"), /confirmation-value|1234567890/);
 });
 
 test("candidate mode always presents free chat, other input and cancel", async () => {
@@ -162,6 +213,8 @@ test("candidate mode always presents free chat, other input and cancel", async (
     assert.equal(h.requests.filter((request) => request.type === "candidate.choose").length, 0);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+function directoryForTests(): string { return process.cwd(); }
 
 test("manual mode preserves native Pi chat", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-manual-"));

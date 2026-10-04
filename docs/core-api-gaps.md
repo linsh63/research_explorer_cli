@@ -18,3 +18,5 @@ Each capability must be added through Core contracts, application/service handle
 This register resolves the scope conflict in the original C0 plan: the independent CLI spike is complete, while these Core owned changes remain prerequisites for the affected navigation and later workflows.
 
 C1 consumes the existing authenticated `/v1/health` endpoint directly through the public service protocol, so health is available to `/research-doctor`. A first-class SDK method remains desirable when the Core package is published. `workspace.projects` remains the blocker for an interactive Project picker; C1 therefore opens an explicit Project ID without a private fallback.
+
+C3 tracks the last 100 public Job IDs in non-sensitive CLI state because `job.list` is not published. Artifact status is displayed from `job.get`; direct filesystem export remains unavailable until `artifact.export` exists. These are explicit capability limits rather than private fallbacks.
