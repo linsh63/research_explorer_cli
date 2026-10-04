@@ -43,7 +43,7 @@ try {
   const { ResearchApplication } = await import(pathToFileURL(appEntry).href);
   const application = await ResearchApplication.open({ databasePath, artifactRoot: join(coreDataDir, "artifacts") });
   try {
-    const worker = application.createLocalWorker({ descriptor: { workerId: "worker:c3-local", protocolVersion: "1", executors: ["python"], capacity: { cpuCores: 2, memoryMiB: 1024, diskMiB: 2048, gpuCount: 0 }, gpuDevices: [], leaseDurationMs: 5_000 }, artifactRoot: join(coreDataDir, "artifacts"), pythonRunnerPath: resolve(dirname(coreEntry), "../../python/worker/runner.py"), heartbeatIntervalMs: 100 });
+    const worker = application.createLocalWorker({ descriptor: { workerId: "worker:c3-local", protocolVersion: "1", executors: ["python"], capacity: { cpuCores: 2, memoryMiB: 2048, diskMiB: 2048, gpuCount: 0 }, gpuDevices: [], leaseDurationMs: 5_000 }, artifactRoot: join(coreDataDir, "artifacts"), pythonRunnerPath: resolve(dirname(coreEntry), "../../python/worker/runner.py"), heartbeatIntervalMs: 100 });
     await worker.runOnce();
   } finally { application.close(); }
   const completed = await jobs.get(jobId);
@@ -89,7 +89,7 @@ try {
   rmSync(validationRoot, { recursive: true, force: true });
 }
 
-function pythonSpec(workspace, script, artifactPaths) { return { name: "C3 Python Job", dataRole: "exploration", studyId: null, execution: { kind: "python", workspace, script, args: [], env: {}, artifactPaths }, resources: { cpuCores: 1, memoryMiB: 256, diskMiB: 256, gpuCount: 0 }, limits: { wallTimeMs: 10_000, cpuTimeSeconds: 5, maxOutputBytes: 100_000, maxArtifactBytes: 1_000_000 }, priority: 0, resumable: true, maxAttempts: 3, executionPhase: "general" }; }
+function pythonSpec(workspace, script, artifactPaths) { return { name: "C3 Python Job", dataRole: "exploration", studyId: null, execution: { kind: "python", workspace, script, args: [], env: {}, artifactPaths }, resources: { cpuCores: 1, memoryMiB: 1024, diskMiB: 256, gpuCount: 0 }, limits: { wallTimeMs: 10_000, cpuTimeSeconds: 5, maxOutputBytes: 100_000, maxArtifactBytes: 1_000_000 }, priority: 0, resumable: true, maxAttempts: 3, executionPhase: "general" }; }
 async function workerRequest(discovery, body) { const token = readFileSync(discovery.tokenFile, "utf8").trim(); const response = await fetch(`${discovery.baseUrl}/v1/workers`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(body) }); assert.ok(response.ok); return response.json(); }
 function writeSessionFixture(path, cwd) { const timestamp = new Date().toISOString(); writeFileSync(path, `${JSON.stringify({ type: "session", version: 3, id: "c3-validation", timestamp, cwd })}\n${JSON.stringify({ type: "message", id: "c3seed01", parentId: null, timestamp, message: { role: "user", content: "C3 fixture; no model invocation.", timestamp: Date.now() } })}\n`); }
 async function waitForDiscovery(dataDir) { const path = join(dataDir, "core-service.json"); await waitFor(() => existsSync(path), 20_000); return JSON.parse(readFileSync(path, "utf8")); }

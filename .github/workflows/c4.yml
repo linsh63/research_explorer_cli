@@ -33,10 +33,19 @@ jobs:
         run: npm ci
       - name: Unit and C0 regression
         run: npm run check && npm test && npm run validate:c0
-      - name: Real Core C1-C4 acceptance
-        run: npm run validate:c1 && npm run validate:c2 && npm run validate:c3 && npm run validate:c4
+      - name: Real Core C1 acceptance
+        run: npm run validate:c1
         env:
           C1_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+      - name: Real Core C2 acceptance
+        run: npm run validate:c2
+        env:
           C2_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+      - name: Real Core C3 acceptance
+        run: npm run validate:c3
+        env:
           C3_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+      - name: Real Core C4 acceptance
+        run: npm run validate:c4
+        env:
           C4_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
