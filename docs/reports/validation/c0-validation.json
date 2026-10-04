@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "stage": "C0",
+  "status": "pass",
+  "product": "Research Explorer",
+  "binary": "rexplore",
+  "piVersion": "1.0.2",
+  "repository": {
+    "commands": [
+      "research-about"
+    ],
+    "contextEntryPersisted": true,
+    "contextEntryRestored": true,
+    "abortAcknowledged": true,
+    "persistentSessionFile": true
+  },
+  "package": {
+    "filename": "research-explorer-cli-0.1.0-alpha.0.tgz",
+    "sha256": "e8c72969f8fcf9da4b9d94afe191b33da334b3b14311e2f0fd9473a2eef4e1d2",
+    "entries": 16,
+    "installedVersion": "1.0.2",
+    "commands": [
+      "research-about"
+    ]
+  },
+  "assertions": {
+    "piCliReused": true,
+    "extensionLoaded": true,
+    "durableSessionResume": true,
+    "cancellationPath": true,
+    "noModelCall": true,
+    "noCoreInternalImport": true,
+    "packageOnlyInstall": true
+  },
+  "elapsedMs": 8994,
+  "recordedAt": "2026-10-04T06:13:45.640Z"
+}
