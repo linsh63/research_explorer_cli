@@ -11,7 +11,9 @@
       "research-doctor",
       "research-new",
       "research-open",
-      "research-status"
+      "research-status",
+      "research-mode",
+      "research-next"
     ],
     "contextEntryPersisted": true,
     "contextEntryRestored": true,
@@ -19,16 +21,18 @@
     "persistentSessionFile": true
   },
   "package": {
-    "filename": "research-explorer-cli-0.1.0-alpha.1.tgz",
-    "sha256": "a7e0e3dc402a5808c4d55c9c21f9bc329dd15cedaeb9ed54ee110d358887a0c4",
-    "entries": 30,
+    "filename": "research-explorer-cli-0.1.0-alpha.2.tgz",
+    "sha256": "dd5b3988ae1fa8523b1809397e4f1d88d47465eefc33630a460691e65a33977f",
+    "entries": 44,
     "installedVersion": "1.0.2",
     "commands": [
       "research-about",
       "research-doctor",
       "research-new",
       "research-open",
-      "research-status"
+      "research-status",
+      "research-mode",
+      "research-next"
     ]
   },
   "assertions": {
@@ -40,6 +44,6 @@
     "noCoreInternalImport": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 11922,
-  "recordedAt": "2026-10-04T11:25:12.347Z"
+  "elapsedMs": 9045,
+  "recordedAt": "2026-10-04T11:45:00.749Z"
 }

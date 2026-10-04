@@ -1,6 +1,6 @@
 # Research Explorer CLI v0.1 实施规划（v2.0 项目集）
 
-状态：**C0–C1 已完成，C2–C5 待分阶段实施**
+状态：**C0–C2 已完成，C3–C5 待分阶段实施**
 目标产品仓库：`/data0/linsihan/research-explorer-cli`  
 核心依赖：`auto-research-agent` 公共 SDK/API  
 交互底座：`@earendil-works/pi-coding-agent@1.0.2`
@@ -316,6 +316,8 @@ CLI 不提供粘贴、显示或导出 token 的命令。
 门禁：Linux/macOS 创建和恢复 Project；Core 重启后状态一致；token 不进入 Pi session。
 
 ### C2：自由聊天、Candidate 与 Auto
+
+执行结果：**2026-10-04 通过**。详见 [`../reports/stages/c2-progress.md`](../reports/stages/c2-progress.md) 和 [ADR 003](../architecture/decisions/003-interaction-modes-and-gates.md)。
 
 - research tools、system snapshot 注入。
 - manual/candidate/auto。

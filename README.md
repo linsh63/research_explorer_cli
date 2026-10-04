@@ -10,13 +10,14 @@ The product reuses Pi's TUI, model authentication, sessions, streaming, tools, s
 
 ## Current status
 
-C0 and C1 are complete. Research Explorer can discover or start Core, create/open a Project, show status and restore the binding after CLI and Core restarts. Research action workflows begin in C2.
+C0 through C2 are complete. Research Explorer can connect to Core, manage Project context and use manual, candidate or bounded auto research interaction.
 
 ```bash
 npm ci
 npm test
 npm run validate:c0
 npm run validate:c1
+npm run validate:c2
 node dist/launcher.js --version
 ```
 
@@ -41,9 +42,13 @@ Inside Research Explorer:
 /research-doctor
 /research-new My first research project
 /research-status
+/research-mode candidate
+/research-next
 ```
 
 Later runs use the saved Core discovery and recent Project automatically. Use `/research-open <project-id>` to switch Projects.
+
+Manual mode preserves normal Pi chat. Candidate mode offers Core-issued next actions plus free chat, other input and cancel. Auto mode allows Core to execute at most one zero-cost, permission-free question action per turn and still stops for mandatory approval.
 
 ## Architecture boundary
 

@@ -1,4 +1,4 @@
-name: C1 Core integration
+name: C0-C2 integration
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  c1:
+  c2:
     strategy:
       fail-fast: false
       matrix:
@@ -37,4 +37,7 @@ jobs:
         run: npm run validate:c1
         env:
           C1_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
-
+      - name: Real Core C2 acceptance
+        run: npm run validate:c2
+        env:
+          C2_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js

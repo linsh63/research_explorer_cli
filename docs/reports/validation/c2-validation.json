@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "stage": "C2",
+  "status": "pass",
+  "platform": "linux/x64",
+  "entryEquivalence": {
+    "direct": "question.proposed",
+    "candidate": "question.proposed",
+    "auto": "question.proposed",
+    "semanticActionEqual": true
+  },
+  "candidateUi": {
+    "fixedFallbacks": [
+      "继续用原输入自由聊天",
+      "输入其他行动",
+      "取消"
+    ],
+    "freeInputLast": true
+  },
+  "gates": {
+    "autoScopeApprovalBlocked": true,
+    "agentScopeApprovalRejected": true,
+    "explicitUserApprovalAccepted": true
+  },
+  "persistence": {
+    "mode": "auto",
+    "conversationSessionId": true,
+    "tokenExcluded": true
+  },
+  "commands": [
+    "research-about",
+    "research-doctor",
+    "research-new",
+    "research-open",
+    "research-status",
+    "research-mode",
+    "research-next"
+  ],
+  "assertions": {
+    "realCore": true,
+    "realPiRpc": true,
+    "noModelCall": true
+  },
+  "elapsedMs": 1103,
+  "recordedAt": "2026-10-04T11:45:12.232Z"
+}
