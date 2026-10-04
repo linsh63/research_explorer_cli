@@ -1,6 +1,6 @@
 # C2 completion report
 
-- Status: passed on Linux; macOS CI gate configured
+- Status: passed on Linux and macOS
 - Completed: 2026-10-04
 - Product version: `0.1.0-alpha.2`
 
@@ -28,9 +28,8 @@
 
 The machine-readable result is [`../validation/c2-validation.json`](../validation/c2-validation.json). Unit tests cover routing, fixed choices, native manual chat, explicit write confirmation, mandatory gate refusal, candidate approval cancellation and degraded restoration.
 
-The workflow [`.github/workflows/c2.yml`](../../../.github/workflows/c2.yml) runs C0, C1 and the same real-Core C2 acceptance on Ubuntu 24.04 and macOS 14.
+The workflow [`.github/workflows/c2.yml`](../../../.github/workflows/c2.yml) ran C0, C1 and the same real-Core C2 acceptance on Ubuntu 24.04 and macOS 14. Both jobs passed for commit `bb3b404`; the run is recorded in [`../validation/c2-ci.json`](../validation/c2-ci.json).
 
 ## Result
 
 C2 provides the first useful research interaction loop while retaining Pi's normal chat. Research Explorer can guide or automatically execute early question transitions, but Core continues to enforce every state change and mandatory gate. Jobs, event streaming, artifacts and SSH Worker interaction remain C3 scope.
-

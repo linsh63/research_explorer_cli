@@ -11,7 +11,7 @@
   },
   "project": {
     "workspaceId": "workspace:c1-validation",
-    "projectId": "program-9312f32b-991b-406b-9a4d-9085207a94a2",
+    "projectId": "program-31945ba9-3e01-4227-b01b-369a0b3f8c3f",
     "restoredAfterCoreRestart": true,
     "restoredFromPiSession": true,
     "restoredFromRecentState": true
@@ -27,7 +27,7 @@
   ],
   "package": {
     "filename": "research-explorer-cli-0.1.0-alpha.2.tgz",
-    "sha256": "dd5b3988ae1fa8523b1809397e4f1d88d47465eefc33630a460691e65a33977f",
+    "sha256": "82b7aebed36b66361f14dd81e45bd5e4557885c1f5754ab821cb9f7eafa66c98",
     "entries": 44,
     "statusCommandHandled": true
   },
@@ -40,6 +40,6 @@
     "noModelCall": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 8922,
-  "recordedAt": "2026-10-04T11:45:10.403Z"
+  "elapsedMs": 9531,
+  "recordedAt": "2026-10-04T11:50:22.500Z"
 }
