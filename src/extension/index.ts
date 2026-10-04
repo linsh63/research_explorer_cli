@@ -66,10 +66,16 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
           client = await dependencies.connect(config);
           connectionError = null;
           if (context) {
-            const status = await queryProject(client, context.workspaceId, context.projectId);
-            if (status) {
-              context = contextFromStatus(status);
-              contextVerified = true;
+            try {
+              const status = await queryProject(client, context.workspaceId, context.projectId);
+              if (status) {
+                context = contextFromStatus(status);
+                contextVerified = true;
+              }
+            } catch (error) {
+              connectionError = safeError(error);
+              client = null;
+              contextVerified = false;
             }
           }
         } else {
@@ -126,7 +132,16 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
           ctx.ui.notify(result.error?.message ?? "Core rejected Project creation.", "error");
           return;
         }
-        const status = await queryProject(activeClient, config.workspaceId, result.projectId);
+        let status;
+        try {
+          status = await queryProject(activeClient, config.workspaceId, result.projectId);
+        } catch (error) {
+          connectionError = safeError(error);
+          client = null;
+          updateUi(ctx);
+          ctx.ui.notify(`Project was created but Core became unavailable: ${connectionError}`, "error");
+          return;
+        }
         if (!status) {
           ctx.ui.notify("Project was created but its status could not be loaded.", "error");
           return;
@@ -146,7 +161,16 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         }
         const activeClient = await requireClient(ctx);
         if (!activeClient) return;
-        const status = await queryProject(activeClient, config.workspaceId, projectId);
+        let status;
+        try {
+          status = await queryProject(activeClient, config.workspaceId, projectId);
+        } catch (error) {
+          connectionError = safeError(error);
+          client = null;
+          updateUi(ctx);
+          ctx.ui.notify(`Core unavailable: ${connectionError}`, "error");
+          return;
+        }
         if (!status) {
           ctx.ui.notify(`Project ${projectId} was not found in ${config.workspaceId}.`, "error");
           return;
@@ -165,7 +189,17 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         }
         const activeClient = await requireClient(ctx);
         if (!activeClient) return;
-        const status = await queryProject(activeClient, context.workspaceId, context.projectId);
+        let status;
+        try {
+          status = await queryProject(activeClient, context.workspaceId, context.projectId);
+        } catch (error) {
+          connectionError = safeError(error);
+          client = null;
+          contextVerified = false;
+          updateUi(ctx);
+          ctx.ui.notify(`Core unavailable: ${connectionError}`, "error");
+          return;
+        }
         if (!status) {
           ctx.ui.notify("The selected Project is unavailable or belongs to another Workspace.", "error");
           return;
@@ -253,19 +287,15 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
 export default createResearchExplorerExtension();
 
 async function queryProject(client: CoreConnection, workspaceId: string, projectId: string): Promise<ProjectStatus | null> {
-  try {
-    const result = await client.query<ProjectStatus>({
-      schemaVersion: PUBLIC_SCHEMA_VERSION,
-      queryId: `cli-${randomUUID()}`,
-      type: "project.status",
-      workspaceId,
-      projectId,
-      actor: actor(),
-    });
-    return result.status === "ok" && result.data ? result.data : null;
-  } catch {
-    return null;
-  }
+  const result = await client.query<ProjectStatus>({
+    schemaVersion: PUBLIC_SCHEMA_VERSION,
+    queryId: `cli-${randomUUID()}`,
+    type: "project.status",
+    workspaceId,
+    projectId,
+    actor: actor(),
+  });
+  return result.status === "ok" && result.data ? result.data : null;
 }
 
 function actor() {
