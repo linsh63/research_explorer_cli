@@ -18,15 +18,18 @@ export PATH="$HOME/.local/bin:$PATH"
 rexplore
 ```
 
-The installer obtains Core and CLI from their public Git repositories. Both packages build during Git installation and place `auto-research-core` and `rexplore` in the same user PATH. `rexplore` therefore discovers and starts Core automatically from any working directory.
+The installer clones both public repositories over HTTPS, builds package tarballs and installs them under the user prefix. It places `auto-research-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory.
 
-Equivalent manual installation:
+Equivalent manual installation uses `npm pack` in each checkout followed by user-prefix installation of both generated tarballs:
 
 ```bash
-npm install -g --prefix "$HOME/.local" \
-  git+https://github.com/linsh63/auto_research_agent.git#main
-npm install -g --prefix "$HOME/.local" \
-  git+https://github.com/linsh63/research_explorer_cli.git#main
+git clone https://github.com/linsh63/auto_research_agent.git
+cd auto_research_agent && npm ci && npm pack
+npm install -g --prefix "$HOME/.local" ./auto-research-agent-*.tgz
+
+git clone https://github.com/linsh63/research_explorer_cli.git
+cd research_explorer_cli && npm ci && npm pack
+npm install -g --prefix "$HOME/.local" ./research-explorer-cli-*.tgz
 export PATH="$HOME/.local/bin:$PATH"
 rexplore
 ```

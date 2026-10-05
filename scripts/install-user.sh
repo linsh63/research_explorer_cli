@@ -38,11 +38,32 @@ command -v git >/dev/null || { echo "git is required" >&2; exit 1; }
 node -e 'const major=Number(process.versions.node.split(".")[0]);if(major<22){console.error("Node.js 22.19 or newer is required");process.exit(1)}'
 
 mkdir -p "$prefix"
+work_root="$(mktemp -d "${TMPDIR:-/tmp}/research-explorer-install.XXXXXX")"
+trap 'rm -rf "$work_root"' EXIT
+
+install_repository() {
+  local name="$1"
+  local url="$2"
+  local ref="$3"
+  local source="$work_root/$name"
+  local pack_dir="$work_root/$name-pack"
+  echo "Installing $name from $url#$ref"
+  git clone --quiet --filter=blob:none "$url" "$source"
+  git -C "$source" checkout --quiet "$ref"
+  npm ci --prefix "$source" --no-audit --no-fund
+  mkdir -p "$pack_dir"
+  (cd "$source" && npm pack --pack-destination "$pack_dir" >/dev/null)
+  local tarball
+  tarball="$(find "$pack_dir" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+  [[ -n "$tarball" ]] || { echo "Failed to build $name package" >&2; exit 1; }
+  npm install -g --prefix "$prefix" --no-audit --no-fund "$tarball"
+}
+
 if [[ $install_core -eq 1 ]]; then
-  npm install -g --prefix "$prefix" "git+https://github.com/linsh63/auto_research_agent.git#${core_ref}"
+  install_repository "auto-research-agent" "https://github.com/linsh63/auto_research_agent.git" "$core_ref"
 fi
 if [[ $install_cli -eq 1 ]]; then
-  npm install -g --prefix "$prefix" "git+https://github.com/linsh63/research_explorer_cli.git#${cli_ref}"
+  install_repository "research-explorer-cli" "https://github.com/linsh63/research_explorer_cli.git" "$cli_ref"
 fi
 
 if [[ ":${PATH}:" != *":${prefix}/bin:"* ]]; then
