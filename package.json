@@ -28,7 +28,8 @@
     "LICENSE",
     "NOTICE",
     "SECURITY.md",
-    "THIRD_PARTY_NOTICES.md"
+    "THIRD_PARTY_NOTICES.md",
+    "scripts/install-user.sh"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -41,6 +42,8 @@
     "validate:c3": "node scripts/validate-c3.mjs",
     "validate:c4": "node scripts/validate-c4.mjs",
     "validate:c5": "node scripts/validate-c5.mjs",
+    "install:user": "bash scripts/install-user.sh",
+    "prepare": "npm run build",
     "prepack": "npm run build && npm run check:boundaries"
   },
   "dependencies": {

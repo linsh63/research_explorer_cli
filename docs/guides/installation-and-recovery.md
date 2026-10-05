@@ -6,11 +6,29 @@
 - Linux x64, macOS arm64 or macOS x64;
 - separately installed Auto Research Agent Core compatible with service/schema `1.0.0`.
 
-Install without administrator permissions:
+## Recommended user installation
+
+Clone the small CLI repository, inspect the installer, then install both independently versioned packages without administrator permissions:
 
 ```bash
-npm install -g --prefix "$HOME/.local" /path/to/research-explorer-cli
+git clone https://github.com/linsh63/research_explorer_cli.git
+cd research_explorer_cli
+bash scripts/install-user.sh
 export PATH="$HOME/.local/bin:$PATH"
+rexplore
+```
+
+The installer obtains Core and CLI from their public Git repositories. Both packages build during Git installation and place `auto-research-core` and `rexplore` in the same user PATH. `rexplore` therefore discovers and starts Core automatically from any working directory.
+
+Equivalent manual installation:
+
+```bash
+npm install -g --prefix "$HOME/.local" \
+  git+https://github.com/linsh63/auto_research_agent.git#main
+npm install -g --prefix "$HOME/.local" \
+  git+https://github.com/linsh63/research_explorer_cli.git#main
+export PATH="$HOME/.local/bin:$PATH"
+rexplore
 ```
 
 During development, build Core and pass its public executable:
@@ -20,6 +38,23 @@ rexplore --research-core-entry /path/to/auto-research-agent/dist/service/cli.js
 ```
 
 Research Explorer defaults to `~/.research-explorer`. Core credentials stay in Core's protected data directory; Pi model credentials stay in Pi.
+
+## Independent updates
+
+Update only Core:
+
+```bash
+cd research_explorer_cli
+bash scripts/install-user.sh --core-only
+```
+
+Update only the CLI:
+
+```bash
+bash scripts/install-user.sh --cli-only
+```
+
+Pin reproducible Git commits with `RESEARCH_CORE_REF` and `RESEARCH_EXPLORER_REF`. When registry publication becomes available, the same independent layout supports separate `npm update -g` operations.
 
 ## Explicit Core permissions
 
@@ -53,4 +88,3 @@ CLI rollback does not downgrade a Core database. If Core was upgraded and migrat
 - If Core is unavailable, saved Project data is marked unverified and is not injected as current fact.
 - CLI exit never cancels a persistent Job.
 - If an SSH Worker is unavailable, Job state remains in Core and stale leases cannot mutate a later attempt.
-

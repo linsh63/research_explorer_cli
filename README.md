@@ -59,6 +59,8 @@ Manual mode preserves normal Pi chat. Candidate mode offers Core-issued next act
 
 See the [command reference](docs/guides/command-reference.md) and [installation/recovery guide](docs/guides/installation-and-recovery.md).
 
+After user-level installation of Core and CLI, `rexplore` starts from any directory without a Core path argument. Both packages can be updated independently.
+
 ## Architecture boundary
 
 ```text
