@@ -1,6 +1,6 @@
 # Research Explorer CLI v0.1 实施规划（v2.0 项目集）
 
-状态：**C0–C5 已完成，v0.1 release candidate 已通过技术验收**
+状态：**C0–C5 已完成，v0.1 稳定版已通过技术验收**
 目标产品仓库：`/data0/linsihan/research-explorer-cli`  
 核心依赖：`auto-research-agent` 公共 SDK/API  
 交互底座：`@earendil-works/pi-coding-agent@1.0.2`

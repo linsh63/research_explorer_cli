@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: linsh63/research_explorer_core
-          ref: 68a083929eae47974ea7a4ea503b5ff1b4a30f17
+          ref: 91664ad226c55efa9fa5584c20eefdb983db4ce5
           path: core
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -67,9 +67,6 @@ jobs:
           node-version: 22.19.0
       - name: Install Core and CLI into user prefix
         run: bash scripts/install-user.sh --prefix "$RUNNER_TEMP/research-explorer-prefix"
-        env:
-          RESEARCH_CORE_REF: 68a083929eae47974ea7a4ea503b5ff1b4a30f17
-          RESEARCH_EXPLORER_REF: ${{ github.sha }}
       - name: Start rexplore from unrelated directory
         run: |
           mkdir -p "$RUNNER_TEMP/unrelated-work"

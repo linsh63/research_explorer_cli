@@ -1,4 +1,4 @@
-# ADR 006: Treat v0.1 as a release candidate without publishing
+# ADR 006: Release v0.1 only after the complete technical gate
 
 - Status: accepted
 - Date: 2026-10-05
@@ -6,7 +6,7 @@
 
 ## Decision
 
-Version `0.1.0-rc.1` is the first product release candidate. C5 validates source, packed npm artifact, public Core workflows and supported native platforms. It does not create a Git tag, GitHub Release or npm publication; those actions require a separate user instruction.
+Version `0.1.0-rc.1` was the first product release candidate. After C5 validated source, packed npm artifact, public Core workflows and supported native platforms, explicit user authorization promoted the same code to stable `0.1.0` for npm publication.
 
 Pi remains the owner of chat, model authentication, skills, sessions, tree navigation, fork/clone and compaction. Research Explorer tests those public surfaces and does not wrap them in a second protocol. RPC is used only by automated acceptance; user automation uses Pi print or JSON modes.
 
@@ -21,4 +21,3 @@ Persistent Research Explorer state remains schema-compatible with `0.1.0-alpha.4
 - a real public-Core Project from creation through fact-bound report;
 - secret, credential, permission and Bundle isolation checks;
 - no Core internal imports, database reads, copied Pi loop or copied TUI.
-

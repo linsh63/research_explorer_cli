@@ -6,6 +6,9 @@ install_cli=1
 prefix="${RESEARCH_EXPLORER_PREFIX:-${HOME}/.local}"
 core_ref="${RESEARCH_CORE_REF:-main}"
 cli_ref="${RESEARCH_EXPLORER_REF:-main}"
+core_version="${RESEARCH_CORE_VERSION:-latest}"
+cli_version="${RESEARCH_EXPLORER_VERSION:-latest}"
+install_source="${RESEARCH_EXPLORER_INSTALL_SOURCE:-npm}"
 
 while (($#)); do
   case "$1" in
@@ -16,14 +19,18 @@ while (($#)); do
       [[ $# -gt 0 ]] || { echo "--prefix requires a path" >&2; exit 2; }
       prefix="$1"
       ;;
+    --git) install_source="git" ;;
     --help)
       cat <<'EOF'
-Usage: install-user.sh [--core-only|--cli-only] [--prefix PATH]
+Usage: install-user.sh [--core-only|--cli-only] [--prefix PATH] [--git]
 
 Environment:
   RESEARCH_EXPLORER_PREFIX  User installation prefix (default: ~/.local)
   RESEARCH_CORE_REF         Core Git ref (default: main)
   RESEARCH_EXPLORER_REF     CLI Git ref (default: main)
+  RESEARCH_CORE_VERSION     Core npm version/tag (default: latest)
+  RESEARCH_EXPLORER_VERSION CLI npm version/tag (default: latest)
+  RESEARCH_EXPLORER_INSTALL_SOURCE npm or git (default: npm)
 EOF
       exit 0
       ;;
@@ -59,11 +66,15 @@ install_repository() {
   npm install -g --prefix "$prefix" --no-audit --no-fund "$tarball"
 }
 
-if [[ $install_core -eq 1 ]]; then
-  install_repository "auto-research-agent" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"
-fi
-if [[ $install_cli -eq 1 ]]; then
-  install_repository "research-explorer-cli" "https://github.com/linsh63/research_explorer_cli.git" "$cli_ref"
+if [[ "$install_source" == "npm" ]]; then
+  if [[ $install_core -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "auto-research-agent@${core_version}"; fi
+  if [[ $install_cli -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-cli@${cli_version}"; fi
+elif [[ "$install_source" == "git" ]]; then
+  if [[ $install_core -eq 1 ]]; then install_repository "auto-research-agent" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"; fi
+  if [[ $install_cli -eq 1 ]]; then install_repository "research-explorer-cli" "https://github.com/linsh63/research_explorer_cli.git" "$cli_ref"; fi
+else
+  echo "RESEARCH_EXPLORER_INSTALL_SOURCE must be npm or git" >&2
+  exit 2
 fi
 
 if [[ ":${PATH}:" != *":${prefix}/bin:"* ]]; then

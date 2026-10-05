@@ -8,19 +8,26 @@
 
 ## Recommended user installation
 
-Clone the small CLI repository, inspect the installer, then install both independently versioned packages without administrator permissions:
+Install both independently versioned packages without administrator permissions:
+
+```bash
+npm install -g --prefix "$HOME/.local" \
+  auto-research-agent research-explorer-cli
+export PATH="$HOME/.local/bin:$PATH"
+rexplore
+```
+
+This places `auto-research-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory.
+
+The repository installer wraps the same npm installation and supports independent updates:
 
 ```bash
 git clone https://github.com/linsh63/research_explorer_cli.git
 cd research_explorer_cli
 bash scripts/install-user.sh
-export PATH="$HOME/.local/bin:$PATH"
-rexplore
 ```
 
-The installer clones both public repositories over HTTPS, builds package tarballs and installs them under the user prefix. It places `auto-research-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory.
-
-Equivalent manual installation uses `npm pack` in each checkout followed by user-prefix installation of both generated tarballs:
+Use `bash scripts/install-user.sh --git` to build directly from the two public GitHub repositories. Manual source packaging is also available:
 
 ```bash
 git clone https://github.com/linsh63/research_explorer_core.git
@@ -44,20 +51,20 @@ Research Explorer defaults to `~/.research-explorer`. Core credentials stay in C
 
 ## Independent updates
 
-Update only Core:
+Update only Core from npm:
 
 ```bash
 cd research_explorer_cli
 bash scripts/install-user.sh --core-only
 ```
 
-Update only the CLI:
+Update only the CLI from npm:
 
 ```bash
 bash scripts/install-user.sh --cli-only
 ```
 
-Pin reproducible Git commits with `RESEARCH_CORE_REF` and `RESEARCH_EXPLORER_REF`. When registry publication becomes available, the same independent layout supports separate `npm update -g` operations.
+Pin npm versions with `RESEARCH_CORE_VERSION` and `RESEARCH_EXPLORER_VERSION`, or use `--git` with `RESEARCH_CORE_REF` and `RESEARCH_EXPLORER_REF` for reproducible source commits.
 
 ## Explicit Core permissions
 
@@ -80,7 +87,7 @@ Enabling a permission only allows the service to evaluate corresponding commands
 
 ## Rollback
 
-Research Explorer `0.1.0-rc.1` writes the same CLI state shape as `0.1.0-alpha.4`; package rollback can reopen saved Project and Job IDs. Install the earlier package and run doctor/status again.
+Research Explorer `0.1.0` writes the same CLI state shape as `0.1.0-rc.1` and `0.1.0-alpha.4`; package rollback can reopen saved Project and Job IDs. Install the earlier package and run doctor/status again.
 
 CLI rollback does not downgrade a Core database. If Core was upgraded and migrated, stop Core and restore its pre-upgrade backup before running an older Core version.
 

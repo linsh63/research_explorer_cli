@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "registry": "https://registry.npmjs.org/",
+  "packages": [
+    {
+      "name": "auto-research-agent",
+      "version": "1.6.0",
+      "distTag": "latest",
+      "integrity": "sha512-Q14IbKhbxLzRiiipXIxNPr8y6P2mTDZkhOZjA8mLDlcQrHVAGCIOajEypZXYb/u6BmzKNjLSwdEO4bpxzfR+yw==",
+      "shasum": "d641adac0e0024a6b1da19e114e93d5a30782685"
+    },
+    {
+      "name": "research-explorer-cli",
+      "version": "0.1.0",
+      "distTag": "latest",
+      "integrity": "sha512-/WkXhO2fB6WgyjmcCpiIu1x07uh/g/lBf6T5XjiDtuRlUFnEyGJAXS+WsA6XtcAkIUnjHp6o9a8Us37EueuT4g==",
+      "shasum": "8c6b482b3461adffa2a07fb65d6fa559cb03ab29"
+    }
+  ],
+  "cleanInstall": {
+    "authenticated": false,
+    "arbitraryWorkingDirectory": true,
+    "rexploreStarted": true,
+    "coreAutoStarted": true,
+    "coreServiceVersion": "1.0.0"
+  },
+  "gitTagCreated": false,
+  "githubReleaseCreated": false,
+  "publishedAt": "2026-10-05T16:24:00+08:00"
+}

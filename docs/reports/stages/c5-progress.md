@@ -1,8 +1,8 @@
 # C5 release-candidate report
 
-- Status: release candidate passed on Linux x64, macOS arm64 and macOS x64
+- Status: stable release passed on Linux x64, macOS arm64 and macOS x64
 - Completed locally: 2026-10-05
-- Release candidate: `0.1.0-rc.1`
+- Release: `0.1.0`
 
 ## Delivered
 
@@ -11,7 +11,7 @@
 - Pi print and JSON automation compatibility; RPC retained only for acceptance/debugging.
 - Session tree, clone, fork and automatic-compaction control regression.
 - Package-only installation, license/notices, local documentation-link and secret gates.
-- Real package upgrade from `0.1.0-alpha.4` to `0.1.0-rc.1` and rollback to `alpha.4` using the same saved state.
+- Real package upgrade from `0.1.0-rc.1` to `0.1.0` and rollback to `rc.1` using the same saved state.
 - Installation, permissions, offline, upgrade and recovery guides.
 - User-prefix installer that builds independently versioned Core and CLI packages from public HTTPS repositories.
 

@@ -11,9 +11,8 @@ The product reuses Pi's TUI, model authentication, sessions, streaming, tools, s
 ## Install and run
 
 ```bash
-git clone https://github.com/linsh63/research_explorer_cli.git
-cd research_explorer_cli
-bash scripts/install-user.sh
+npm install -g --prefix "$HOME/.local" \
+  auto-research-agent research-explorer-cli
 export PATH="$HOME/.local/bin:$PATH"
 rexplore
 ```
@@ -22,7 +21,7 @@ The installer places independently updatable `auto-research-core` and `rexplore`
 
 ## Current status
 
-C0 through C5 are complete. `0.1.0-rc.1` supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
+C0 through C5 are complete. Stable `0.1.0` supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
 
 ```bash
 npm ci
