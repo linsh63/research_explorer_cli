@@ -67,7 +67,13 @@ install_repository() {
 }
 
 if [[ "$install_source" == "npm" ]]; then
-  if [[ $install_core -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-core@${core_version}"; fi
+  if [[ $install_core -eq 1 ]]; then
+    if npm list -g --prefix "$prefix" --depth=0 auto-research-agent >/dev/null 2>&1; then
+      echo "Removing deprecated auto-research-agent package"
+      npm uninstall -g --prefix "$prefix" --no-audit --no-fund auto-research-agent
+    fi
+    npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-core@${core_version}"
+  fi
   if [[ $install_cli -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-cli@${cli_version}"; fi
 elif [[ "$install_source" == "git" ]]; then
   if [[ $install_core -eq 1 ]]; then install_repository "research-explorer-core" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"; fi

@@ -19,6 +19,13 @@ rexplore
 
 This places `research-explorer-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory. The legacy `auto-research-core` command remains a temporary compatibility alias.
 
+When migrating an existing user-prefix installation, remove the deprecated package first to avoid npm command-link collisions. The repository installer detects and performs this migration automatically:
+
+```bash
+npm uninstall -g --prefix "$HOME/.local" auto-research-agent
+npm install -g --prefix "$HOME/.local" research-explorer-core research-explorer-cli
+```
+
 The repository installer wraps the same npm installation and supports independent updates:
 
 ```bash
@@ -87,7 +94,7 @@ Enabling a permission only allows the service to evaluate corresponding commands
 
 ## Rollback
 
-Research Explorer `0.1.1` writes the same CLI state shape as `0.1.0`; package rollback can reopen saved Project and Job IDs. Version `0.1.1` changes the default Core package and executable names while retaining discovery of the old executable as a compatibility fallback.
+Research Explorer `0.1.2` writes the same CLI state shape as `0.1.0`; package rollback can reopen saved Project and Job IDs. Version `0.1.2` migrates the default Core package name while retaining discovery of the old executable as a compatibility fallback.
 
 CLI rollback does not downgrade a Core database. If Core was upgraded and migrated, stop Core and restore its pre-upgrade backup before running an older Core version.
 
