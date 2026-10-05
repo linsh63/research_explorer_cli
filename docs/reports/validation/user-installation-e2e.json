@@ -6,7 +6,7 @@
   "source": {
     "coreRepository": "linsh63/research_explorer_core",
     "coreCommit": "91664ad226c55efa9fa5584c20eefdb983db4ce5",
-    "cliCommit": null,
+    "cliCommit": "109b41eaa001a2b69127f07b2f0a556633b9c13d",
     "coreVersion": "1.6.0",
     "cliVersion": "0.1.0"
   },
@@ -23,7 +23,7 @@
     "corePathArgumentRequired": false
   },
   "ci": {
-    "runId": 37275857119,
+    "runId": 37284686226,
     "job": "user-install",
     "status": "pass"
   },
@@ -33,5 +33,5 @@
     "githubInstallAvailable": true,
     "npmLatestInstallAvailable": true
   },
-  "recordedAt": "2026-10-05T16:24:00+08:00"
+  "recordedAt": "2026-10-05T16:39:00+08:00"
 }
