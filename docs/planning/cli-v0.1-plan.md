@@ -350,7 +350,7 @@ CLI 不提供粘贴、显示或导出 token 的命令。
 
 ### C5：产品验收与 v0.1
 
-执行结果：**2026-10-05 通过本地审计，等待原生矩阵记录**。详见 [`../reports/stages/c5-progress.md`](../reports/stages/c5-progress.md) 和 [ADR 006](../architecture/decisions/006-release-candidate-boundary.md)。
+执行结果：**2026-10-05 全部通过**。Linux x64、macOS arm64 和 macOS x64 原生矩阵完成。详见 [`../reports/stages/c5-progress.md`](../reports/stages/c5-progress.md) 和 [ADR 006](../architecture/decisions/006-release-candidate-boundary.md)。
 
 - 原生 Linux x64、macOS arm64/x64 CI。
 - print/JSON 基础自动化模式；RPC 只做兼容 smoke，不作为首版内部架构。
