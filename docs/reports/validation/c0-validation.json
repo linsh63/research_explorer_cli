@@ -27,6 +27,9 @@
       "research-bundle-export",
       "research-bundle-import",
       "research-dependencies",
+      "research-capabilities",
+      "research-capability",
+      "research-report",
       "research-about",
       "research-doctor",
       "research-new",
@@ -41,9 +44,9 @@
     "persistentSessionFile": true
   },
   "package": {
-    "filename": "research-explorer-cli-0.1.0-alpha.4.tgz",
-    "sha256": "7cadfd2d002d3a3387ad7dfb15706cac04c09926ce9e5af152eb69df47ea61a2",
-    "entries": 78,
+    "filename": "research-explorer-cli-0.1.0-rc.1.tgz",
+    "sha256": "5e14277ae5a64336e79687298074e2299a2e78ddd1779c8aa3e45e0932bb6382",
+    "entries": 88,
     "installedVersion": "1.0.2",
     "commands": [
       "research-job-submit",
@@ -66,6 +69,9 @@
       "research-bundle-export",
       "research-bundle-import",
       "research-dependencies",
+      "research-capabilities",
+      "research-capability",
+      "research-report",
       "research-about",
       "research-doctor",
       "research-new",
@@ -84,6 +90,6 @@
     "noCoreInternalImport": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 13633,
-  "recordedAt": "2026-10-04T16:38:24.099Z"
+  "elapsedMs": 19288,
+  "recordedAt": "2026-10-05T01:58:25.725Z"
 }

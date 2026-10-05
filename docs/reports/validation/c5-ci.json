@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "stages": ["C0", "C1", "C2", "C3", "C4", "C5"],
+  "status": "pass",
+  "sourceCommit": "630cc26344bfbb5b3df7607813aba42769239f14",
+  "workflow": "C0-C5 release candidate",
+  "runId": 37253050057,
+  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37253050057",
+  "jobs": [
+    {
+      "runner": "ubuntu-24.04",
+      "platform": "linux-x64",
+      "status": "pass"
+    },
+    {
+      "runner": "macos-15",
+      "platform": "macos-arm64",
+      "status": "pass"
+    },
+    {
+      "runner": "macos-15-intel",
+      "platform": "macos-x64",
+      "status": "pass"
+    }
+  ],
+  "completedAt": "2026-10-05T09:55:00+08:00"
+}

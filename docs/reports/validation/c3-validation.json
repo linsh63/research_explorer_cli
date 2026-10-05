@@ -45,6 +45,9 @@
     "research-bundle-export",
     "research-bundle-import",
     "research-dependencies",
+    "research-capabilities",
+    "research-capability",
+    "research-report",
     "research-about",
     "research-doctor",
     "research-new",
@@ -59,6 +62,6 @@
     "publicWorkerProtocol": true,
     "noModelCall": true
   },
-  "elapsedMs": 2950,
-  "recordedAt": "2026-10-04T16:38:40.934Z"
+  "elapsedMs": 6124,
+  "recordedAt": "2026-10-05T01:59:00.106Z"
 }

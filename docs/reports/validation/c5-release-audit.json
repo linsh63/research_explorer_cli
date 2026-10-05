@@ -24,7 +24,7 @@
   },
   "package": {
     "filename": "research-explorer-cli-0.1.0-rc.1.tgz",
-    "sha256": "cc261b21064f7b3641864d9eed0c68128df1a15d377eec50379caa744673fd73",
+    "sha256": "5e14277ae5a64336e79687298074e2299a2e78ddd1779c8aa3e45e0932bb6382",
     "entries": 88,
     "packageOnly": true,
     "licenseComplete": true,
@@ -45,6 +45,6 @@
     "githubReleaseCreated": false,
     "npmPublished": false
   },
-  "elapsedMs": 18346,
-  "recordedAt": "2026-10-05T01:50:23.164Z"
+  "elapsedMs": 19992,
+  "recordedAt": "2026-10-05T01:59:23.181Z"
 }

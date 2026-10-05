@@ -48,6 +48,9 @@
     "research-bundle-export",
     "research-bundle-import",
     "research-dependencies",
+    "research-capabilities",
+    "research-capability",
+    "research-report",
     "research-about",
     "research-doctor",
     "research-new",
@@ -61,6 +64,6 @@
     "realPiRpc": true,
     "noModelCall": true
   },
-  "elapsedMs": 1399,
-  "recordedAt": "2026-10-04T16:38:37.679Z"
+  "elapsedMs": 1365,
+  "recordedAt": "2026-10-05T01:58:53.115Z"
 }

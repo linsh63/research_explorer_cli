@@ -1,6 +1,6 @@
 # C5 release-candidate report
 
-- Status: local release audit passed; native matrix pending
+- Status: release candidate passed on Linux x64, macOS arm64 and macOS x64
 - Completed locally: 2026-10-05
 - Release candidate: `0.1.0-rc.1`
 
@@ -18,9 +18,10 @@
 
 [`../validation/c5-release-audit.json`](../validation/c5-release-audit.json) records the deterministic Linux audit. It makes no model call and performs no publication action.
 
+The native C0–C5 matrix passed 3/3 for commit `630cc26`: Ubuntu 24.04, macOS 15 arm64 and macOS 15 Intel. The recorded evidence is [`../validation/c5-ci.json`](../validation/c5-ci.json).
+
 ## Known limits
 
 - `workspace.projects`, `job.list` and `artifact.export` remain public Core API gaps; the CLI uses explicit Project IDs, saved Job IDs and Artifact metadata.
 - Starting a persistent SSH Worker controller is a deployment operation outside the current Core Service endpoint set.
 - The fact-bound C5 report proves the complete CLI/Core path; it is a Project summary, not a claim of completed empirical science.
-
