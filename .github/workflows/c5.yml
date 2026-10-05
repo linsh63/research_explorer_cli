@@ -55,3 +55,26 @@ jobs:
         run: npm run validate:c5
         env:
           C5_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+
+  user-install:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout installer
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - name: Install Core and CLI into user prefix
+        run: bash scripts/install-user.sh --prefix "$RUNNER_TEMP/research-explorer-prefix"
+        env:
+          RESEARCH_CORE_REF: a15b3114ff8a8da1e09660680d76c0ef8121c298
+          RESEARCH_EXPLORER_REF: ${{ github.sha }}
+      - name: Start rexplore from unrelated directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/unrelated-work"
+          cd "$RUNNER_TEMP/unrelated-work"
+          export PATH="$RUNNER_TEMP/research-explorer-prefix/bin:$PATH"
+          export RESEARCH_EXPLORER_HOME="$RUNNER_TEMP/research-explorer-home"
+          rexplore --offline --no-session --print '/research-doctor'
+          node -e 'const fs=require("fs");const p=process.env.RESEARCH_EXPLORER_HOME+"/core/core-service.json";const d=JSON.parse(fs.readFileSync(p,"utf8"));if(d.capabilities.serviceVersion!=="1.0.0")process.exit(1);process.kill(d.pid,"SIGTERM")'

@@ -8,6 +8,18 @@ rexplore
 
 The product reuses Pi's TUI, model authentication, sessions, streaming, tools, skills, compaction, themes, and RPC mode. Research state and gates remain in the separately deployed Core Service.
 
+## Install and run
+
+```bash
+git clone https://github.com/linsh63/research_explorer_cli.git
+cd research_explorer_cli
+bash scripts/install-user.sh
+export PATH="$HOME/.local/bin:$PATH"
+rexplore
+```
+
+The installer places independently updatable `auto-research-core` and `rexplore` commands in the same user prefix. After installation, `rexplore` works from any directory and starts Core automatically.
+
 ## Current status
 
 C0 through C5 are complete. `0.1.0-rc.1` supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
@@ -26,7 +38,7 @@ node dist/launcher.js --version
 
 No model authentication or model call is required for C0/C1 validation.
 
-## Try C1 from the two development checkouts
+## Run from development checkouts
 
 ```bash
 cd /data0/linsihan/auto-research-agent

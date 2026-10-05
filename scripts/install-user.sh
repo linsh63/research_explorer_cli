@@ -52,7 +52,7 @@ install_repository() {
   git -C "$source" checkout --quiet "$ref"
   npm ci --prefix "$source" --no-audit --no-fund
   mkdir -p "$pack_dir"
-  (cd "$source" && npm pack --pack-destination "$pack_dir" >/dev/null)
+  (cd "$source" && npm pack --silent --pack-destination "$pack_dir" >/dev/null)
   local tarball
   tarball="$(find "$pack_dir" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
   [[ -n "$tarball" ]] || { echo "Failed to build $name package" >&2; exit 1; }

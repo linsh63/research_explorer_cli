@@ -13,12 +13,15 @@
 - Package-only installation, license/notices, local documentation-link and secret gates.
 - Real package upgrade from `0.1.0-alpha.4` to `0.1.0-rc.1` and rollback to `alpha.4` using the same saved state.
 - Installation, permissions, offline, upgrade and recovery guides.
+- User-prefix installer that builds independently versioned Core and CLI packages from public HTTPS repositories.
 
 ## Local evidence
 
 [`../validation/c5-release-audit.json`](../validation/c5-release-audit.json) records the deterministic Linux audit. It makes no model call and performs no publication action.
 
 The native C0–C5 matrix passed 3/3 for commit `630cc26`: Ubuntu 24.04, macOS 15 arm64 and macOS 15 Intel. The recorded evidence is [`../validation/c5-ci.json`](../validation/c5-ci.json).
+
+[`../validation/user-installation-e2e.json`](../validation/user-installation-e2e.json) records a clean user-prefix installation from GitHub, Core auto-start from an unrelated working directory, and independent Core-only/CLI-only updates.
 
 ## Known limits
 

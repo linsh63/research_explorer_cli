@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "installMethod": "public_https_clone_build_user_prefix",
+  "prefixKind": "temporary_user_prefix",
+  "source": {
+    "coreCommit": "a15b3114ff8a8da1e09660680d76c0ef8121c298",
+    "cliCommit": "71f7d8a",
+    "coreVersion": "1.6.0-rc.1",
+    "cliVersion": "0.1.0-rc.1"
+  },
+  "assertions": {
+    "noAdministratorPermission": true,
+    "arbitraryWorkingDirectory": true,
+    "rexploreOnPath": true,
+    "coreDiscoveredOnPath": true,
+    "coreAutoStarted": true,
+    "coreServiceVersion": "1.0.0",
+    "publicSchemaVersion": "1.0.0",
+    "coreOnlyUpdatePreservedCli": true,
+    "cliOnlyUpdatePreservedCore": true,
+    "corePathArgumentRequired": false
+  },
+  "registry": {
+    "npmAuthenticated": false,
+    "npmPublishPerformed": false,
+    "githubInstallAvailable": true
+  },
+  "recordedAt": "2026-10-05T10:20:00+08:00"
+}
