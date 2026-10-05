@@ -67,10 +67,10 @@ install_repository() {
 }
 
 if [[ "$install_source" == "npm" ]]; then
-  if [[ $install_core -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "auto-research-agent@${core_version}"; fi
+  if [[ $install_core -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-core@${core_version}"; fi
   if [[ $install_cli -eq 1 ]]; then npm install -g --prefix "$prefix" --no-audit --no-fund "research-explorer-cli@${cli_version}"; fi
 elif [[ "$install_source" == "git" ]]; then
-  if [[ $install_core -eq 1 ]]; then install_repository "auto-research-agent" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"; fi
+  if [[ $install_core -eq 1 ]]; then install_repository "research-explorer-core" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"; fi
   if [[ $install_cli -eq 1 ]]; then install_repository "research-explorer-cli" "https://github.com/linsh63/research_explorer_cli.git" "$cli_ref"; fi
 else
   echo "RESEARCH_EXPLORER_INSTALL_SOURCE must be npm or git" >&2

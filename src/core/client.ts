@@ -129,7 +129,7 @@ export async function diagnoseCore(config: CoreConfig, connector = connectLocalC
       offline: health.offline,
       platform: [client.capabilities.platform?.os, client.capabilities.platform?.arch].filter(Boolean).join("/") || null,
       autoStart: config.autoStart,
-      serviceEntry: config.serviceEntry ?? findOnPath("auto-research-core"),
+      serviceEntry: config.serviceEntry ?? findCoreOnPath(),
       error: null,
     };
   } catch (error) {
@@ -141,7 +141,7 @@ export async function diagnoseCore(config: CoreConfig, connector = connectLocalC
       offline: null,
       platform: null,
       autoStart: config.autoStart,
-      serviceEntry: config.serviceEntry ?? findOnPath("auto-research-core"),
+      serviceEntry: config.serviceEntry ?? findCoreOnPath(),
       error: safeError(error),
     };
   }
@@ -212,14 +212,18 @@ function resolveServiceEntry(configured?: string): string {
     if (!entry || !existsSync(entry)) throw new CoreConnectionError("Configured Core Service entry does not exist", "configuration");
     return entry;
   }
-  const entry = findOnPath("auto-research-core");
+  const entry = findCoreOnPath();
   if (!entry) {
     throw new CoreConnectionError(
-      "auto-research-core was not found; install Core or pass --research-core-entry <path>",
+      "research-explorer-core was not found; install Core or pass --research-core-entry <path>",
       "configuration",
     );
   }
   return entry;
+}
+
+function findCoreOnPath(): string | null {
+  return findOnPath("research-explorer-core") ?? findOnPath("auto-research-core");
 }
 
 function findOnPath(name: string): string | null {

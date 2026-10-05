@@ -8,7 +8,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 export function registerCoreFlags(pi: ExtensionAPI): void {
   pi.registerFlag("research-core-data-dir", { type: "string", description: "Core Service discovery directory" });
   pi.registerFlag("research-core-database", { type: "string", description: "Core Service database path" });
-  pi.registerFlag("research-core-entry", { type: "string", description: "auto-research-core executable or JS entry" });
+  pi.registerFlag("research-core-entry", { type: "string", description: "research-explorer-core executable or JS entry" });
   pi.registerFlag("research-no-core-autostart", { type: "boolean", description: "Only attach to an existing Core Service" });
   pi.registerFlag("research-workspace", { type: "string", description: "Default research Workspace ID" });
   pi.registerFlag("research-state-file", { type: "string", description: "Non-sensitive recent Project state file" });

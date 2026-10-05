@@ -2,7 +2,7 @@
 import { readFileSync,readdirSync,statSync } from "node:fs";
 import { join,relative,resolve } from "node:path";
 const root=resolve("."),issues=[],pkg=JSON.parse(readFileSync(join(root,"package.json"),"utf8")),files=[];walk(join(root,"src"));
-for(const path of files){const text=readFileSync(path,"utf8"),name=relative(root,path);for(const pattern of [/auto-research-agent\/(?:src|domain|application|infrastructure|core)/,/better-sqlite3/,/migrations\//,/\.research-data\/research\.db/])if(pattern.test(text))issues.push({file:name,reason:`forbidden internal dependency ${pattern}`});}
+for(const path of files){const text=readFileSync(path,"utf8"),name=relative(root,path);for(const pattern of [/(?:auto-research-agent|research-explorer-core)\/(?:src|domain|application|infrastructure|core)/,/better-sqlite3/,/migrations\//,/\.research-data\/research\.db/])if(pattern.test(text))issues.push({file:name,reason:`forbidden internal dependency ${pattern}`});}
 if(pkg.dependencies?.["@earendil-works/pi-coding-agent"]!=="1.0.2")issues.push({file:"package.json",reason:"Pi must be pinned exactly to audited 1.0.2"});
 if(pkg.dependencies?.["@earendil-works/pi-tui"]!=="1.0.2")issues.push({file:"package.json",reason:"Pi TUI must match the pinned Pi version 1.0.2"});
 const compatibility=pkg.researchExplorer?.compatibility;

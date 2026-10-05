@@ -2,7 +2,7 @@
 
 状态：**C0–C5 已完成，v0.1 稳定版已通过技术验收**
 目标产品仓库：`/data0/linsihan/research-explorer-cli`  
-核心依赖：`auto-research-agent` 公共 SDK/API  
+核心依赖：`research-explorer-core` 公共 SDK/API
 交互底座：`@earendil-works/pi-coding-agent@1.0.2`
 
 ## 1. 背景与现状
@@ -99,7 +99,7 @@ research-explorer-cli/
 ```text
 rexplore launcher / Pi extension
        ↓
-auto-research-agent/client + contracts
+research-explorer-core/client + contracts
        ↓
 Core Service
 ```

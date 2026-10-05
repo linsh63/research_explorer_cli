@@ -1,7 +1,7 @@
 # Core public API gaps for the CLI
 
 Status: tracked external dependencies after C1
-Owner repository: `auto-research-agent`
+Owner repository: `research_explorer_core`
 
 C0 intentionally does not change or push the Core repository. The CLI also does not read Core databases, internal modules or filesystem state as a fallback. Before C1 navigation is considered complete, Core needs stable public contracts and SDK methods for:
 

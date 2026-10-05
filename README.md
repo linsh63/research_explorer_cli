@@ -12,16 +12,16 @@ The product reuses Pi's TUI, model authentication, sessions, streaming, tools, s
 
 ```bash
 npm install -g --prefix "$HOME/.local" \
-  auto-research-agent research-explorer-cli
+  research-explorer-core research-explorer-cli
 export PATH="$HOME/.local/bin:$PATH"
 rexplore
 ```
 
-The installer places independently updatable `auto-research-core` and `rexplore` commands in the same user prefix. After installation, `rexplore` works from any directory and starts Core automatically.
+The installer places independently updatable `research-explorer-core` and `rexplore` commands in the same user prefix. After installation, `rexplore` works from any directory and starts Core automatically.
 
 ## Current status
 
-C0 through C5 are complete. Stable `0.1.0` supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
+C0 through C5 are complete. Stable `0.1.1` uses the unified `research-explorer-core` package name and supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
 
 ```bash
 npm ci
@@ -40,14 +40,14 @@ No model authentication or model call is required for C0/C1 validation.
 ## Run from development checkouts
 
 ```bash
-cd /data0/linsihan/auto-research-agent
+cd /path/to/research_explorer_core
 npm run build
 
 cd /data0/linsihan/research-explorer-cli
 npm ci
 npm run build
 node dist/launcher.js --offline \
-  --research-core-entry /data0/linsihan/auto-research-agent/dist/service/cli.js
+  --research-core-entry /path/to/research_explorer_core/dist/service/cli.js
 ```
 
 Inside Research Explorer:

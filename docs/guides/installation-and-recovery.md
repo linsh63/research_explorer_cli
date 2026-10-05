@@ -12,12 +12,12 @@ Install both independently versioned packages without administrator permissions:
 
 ```bash
 npm install -g --prefix "$HOME/.local" \
-  auto-research-agent research-explorer-cli
+  research-explorer-core research-explorer-cli
 export PATH="$HOME/.local/bin:$PATH"
 rexplore
 ```
 
-This places `auto-research-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory.
+This places `research-explorer-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory. The legacy `auto-research-core` command remains a temporary compatibility alias.
 
 The repository installer wraps the same npm installation and supports independent updates:
 
@@ -32,7 +32,7 @@ Use `bash scripts/install-user.sh --git` to build directly from the two public G
 ```bash
 git clone https://github.com/linsh63/research_explorer_core.git
 cd research_explorer_core && npm ci && npm pack
-npm install -g --prefix "$HOME/.local" ./auto-research-agent-*.tgz
+npm install -g --prefix "$HOME/.local" ./research-explorer-core-*.tgz
 
 git clone https://github.com/linsh63/research_explorer_cli.git
 cd research_explorer_cli && npm ci && npm pack
@@ -44,7 +44,7 @@ rexplore
 During development, build Core and pass its public executable:
 
 ```bash
-rexplore --research-core-entry /path/to/auto-research-agent/dist/service/cli.js
+rexplore --research-core-entry /path/to/research_explorer_core/dist/service/cli.js
 ```
 
 Research Explorer defaults to `~/.research-explorer`. Core credentials stay in Core's protected data directory; Pi model credentials stay in Pi.
@@ -87,7 +87,7 @@ Enabling a permission only allows the service to evaluate corresponding commands
 
 ## Rollback
 
-Research Explorer `0.1.0` writes the same CLI state shape as `0.1.0-rc.1` and `0.1.0-alpha.4`; package rollback can reopen saved Project and Job IDs. Install the earlier package and run doctor/status again.
+Research Explorer `0.1.1` writes the same CLI state shape as `0.1.0`; package rollback can reopen saved Project and Job IDs. Version `0.1.1` changes the default Core package and executable names while retaining discovery of the old executable as a compatibility fallback.
 
 CLI rollback does not downgrade a Core database. If Core was upgraded and migrated, stop Core and restore its pre-upgrade backup before running an older Core version.
 
