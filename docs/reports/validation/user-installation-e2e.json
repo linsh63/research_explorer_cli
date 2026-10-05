@@ -6,9 +6,9 @@
   "source": {
     "coreRepository": "linsh63/research_explorer_core",
     "coreCommit": "2347be17c6d6d913d3a96e2f29cead419f646194",
-    "cliCommit": "b4c7a14b6f32a3a48e7dc6eb537b783071c36b5f",
+    "cliCommit": "0713ecf9583936035c0981b24af3115679b9eaf8",
     "coreVersion": "1.6.0",
-    "cliVersion": "0.1.1"
+    "cliVersion": "0.1.2"
   },
   "assertions": {
     "noAdministratorPermission": true,
@@ -20,10 +20,11 @@
     "publicSchemaVersion": "1.0.0",
     "coreOnlyUpdatePreservedCli": true,
     "cliOnlyUpdatePreservedCore": true,
+    "deprecatedCorePackageRemoved": true,
     "corePathArgumentRequired": false
   },
   "ci": {
-    "runId": 37311773134,
+    "runId": 37313637740,
     "job": "user-install",
     "status": "pass"
   },
@@ -33,5 +34,5 @@
     "githubInstallAvailable": true,
     "npmLatestInstallAvailable": true
   },
-  "recordedAt": "2026-10-05T20:37:00+08:00"
+  "recordedAt": "2026-10-05T21:04:00+08:00"
 }
