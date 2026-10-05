@@ -68,6 +68,7 @@ jobs:
       - name: Install published Core and current CLI into user prefix
         run: |
           bash scripts/install-user.sh --core-only --prefix "$RUNNER_TEMP/research-explorer-prefix"
+          npm ci --no-audit --no-fund
           npm install -g --prefix "$RUNNER_TEMP/research-explorer-prefix" --no-audit --no-fund .
       - name: Start rexplore from unrelated directory
         run: |
