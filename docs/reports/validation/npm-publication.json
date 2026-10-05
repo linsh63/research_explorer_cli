@@ -4,18 +4,25 @@
   "registry": "https://registry.npmjs.org/",
   "packages": [
     {
-      "name": "auto-research-agent",
+      "name": "research-explorer-core",
       "version": "1.6.0",
       "distTag": "latest",
-      "integrity": "sha512-Q14IbKhbxLzRiiipXIxNPr8y6P2mTDZkhOZjA8mLDlcQrHVAGCIOajEypZXYb/u6BmzKNjLSwdEO4bpxzfR+yw==",
-      "shasum": "d641adac0e0024a6b1da19e114e93d5a30782685"
+      "integrity": "sha512-uxEa9DeXWmPgm77PtTSqJK4snZpirf3JHM1PbqZyzruvpIpngYJ723flnrju6/69ZmlduoEQdVQB2/Oglb1dGQ==",
+      "shasum": "ac2fdd77ac36aed0ce5f3b59787c7c76b6d19354"
     },
     {
       "name": "research-explorer-cli",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "distTag": "latest",
-      "integrity": "sha512-/WkXhO2fB6WgyjmcCpiIu1x07uh/g/lBf6T5XjiDtuRlUFnEyGJAXS+WsA6XtcAkIUnjHp6o9a8Us37EueuT4g==",
-      "shasum": "8c6b482b3461adffa2a07fb65d6fa559cb03ab29"
+      "integrity": "sha512-KgBBEX/qhs+WPf2HPuQYtmOxYjS2ZfKH+ivfqbUDMrUC5sSkeIirrsTI9vGA1QsdvqirLQHy91hwiJeinhiipw==",
+      "shasum": "44a000331768b9d262723f5c3d2963701e7e5144"
+    }
+  ],
+  "deprecatedPackages": [
+    {
+      "name": "auto-research-agent",
+      "replacement": "research-explorer-core",
+      "status": "deprecated"
     }
   ],
   "cleanInstall": {
@@ -27,5 +34,5 @@
   },
   "gitTagCreated": false,
   "githubReleaseCreated": false,
-  "publishedAt": "2026-10-05T16:24:00+08:00"
+  "publishedAt": "2026-10-05T20:37:00+08:00"
 }

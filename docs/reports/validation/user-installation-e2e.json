@@ -5,10 +5,10 @@
   "prefixKind": "temporary_user_prefix",
   "source": {
     "coreRepository": "linsh63/research_explorer_core",
-    "coreCommit": "91664ad226c55efa9fa5584c20eefdb983db4ce5",
-    "cliCommit": "109b41eaa001a2b69127f07b2f0a556633b9c13d",
+    "coreCommit": "2347be17c6d6d913d3a96e2f29cead419f646194",
+    "cliCommit": "b4c7a14b6f32a3a48e7dc6eb537b783071c36b5f",
     "coreVersion": "1.6.0",
-    "cliVersion": "0.1.0"
+    "cliVersion": "0.1.1"
   },
   "assertions": {
     "noAdministratorPermission": true,
@@ -23,7 +23,7 @@
     "corePathArgumentRequired": false
   },
   "ci": {
-    "runId": 37284686226,
+    "runId": 37311773134,
     "job": "user-install",
     "status": "pass"
   },
@@ -33,5 +33,5 @@
     "githubInstallAvailable": true,
     "npmLatestInstallAvailable": true
   },
-  "recordedAt": "2026-10-05T16:39:00+08:00"
+  "recordedAt": "2026-10-05T20:37:00+08:00"
 }
