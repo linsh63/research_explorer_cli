@@ -20,8 +20,8 @@ jobs:
       - name: Checkout pinned Core
         uses: actions/checkout@v4
         with:
-          repository: linsh63/auto_research_agent
-          ref: eb954b412b157d595df0ce28be8a079ee67127ff
+          repository: linsh63/research_explorer_core
+          ref: 68a0839
           path: core
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Install Core and CLI into user prefix
         run: bash scripts/install-user.sh --prefix "$RUNNER_TEMP/research-explorer-prefix"
         env:
-          RESEARCH_CORE_REF: a15b3114ff8a8da1e09660680d76c0ef8121c298
+          RESEARCH_CORE_REF: 68a0839
           RESEARCH_EXPLORER_REF: ${{ github.sha }}
       - name: Start rexplore from unrelated directory
         run: |

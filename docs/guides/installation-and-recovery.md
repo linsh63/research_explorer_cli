@@ -23,8 +23,8 @@ The installer clones both public repositories over HTTPS, builds package tarball
 Equivalent manual installation uses `npm pack` in each checkout followed by user-prefix installation of both generated tarballs:
 
 ```bash
-git clone https://github.com/linsh63/auto_research_agent.git
-cd auto_research_agent && npm ci && npm pack
+git clone https://github.com/linsh63/research_explorer_core.git
+cd research_explorer_core && npm ci && npm pack
 npm install -g --prefix "$HOME/.local" ./auto-research-agent-*.tgz
 
 git clone https://github.com/linsh63/research_explorer_cli.git

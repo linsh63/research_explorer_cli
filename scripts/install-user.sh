@@ -60,7 +60,7 @@ install_repository() {
 }
 
 if [[ $install_core -eq 1 ]]; then
-  install_repository "auto-research-agent" "https://github.com/linsh63/auto_research_agent.git" "$core_ref"
+  install_repository "auto-research-agent" "https://github.com/linsh63/research_explorer_core.git" "$core_ref"
 fi
 if [[ $install_cli -eq 1 ]]; then
   install_repository "research-explorer-cli" "https://github.com/linsh63/research_explorer_cli.git" "$cli_ref"
