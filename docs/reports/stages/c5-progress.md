@@ -19,7 +19,7 @@
 
 [`../validation/c5-release-audit.json`](../validation/c5-release-audit.json) records the deterministic Linux audit. It makes no model call and performs no publication action.
 
-The native C0–C5 matrix passed 3/3 for commit `630cc26`: Ubuntu 24.04, macOS 15 arm64 and macOS 15 Intel. The recorded evidence is [`../validation/c5-ci.json`](../validation/c5-ci.json).
+The final workflow passed 4/4 for commit `ac05964`: Ubuntu 24.04, macOS 15 arm64, macOS 15 Intel and a clean user-prefix installation job. The recorded evidence is [`../validation/c5-ci.json`](../validation/c5-ci.json).
 
 [`../validation/user-installation-e2e.json`](../validation/user-installation-e2e.json) records a clean user-prefix installation from GitHub, Core auto-start from an unrelated working directory, and independent Core-only/CLI-only updates.
 

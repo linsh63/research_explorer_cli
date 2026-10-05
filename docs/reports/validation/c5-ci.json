@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "stages": ["C0", "C1", "C2", "C3", "C4", "C5"],
   "status": "pass",
-  "sourceCommit": "630cc26344bfbb5b3df7607813aba42769239f14",
+  "sourceCommit": "ac05964e4fa39ea811dbbce1fc31d539b09a81ce",
   "workflow": "C0-C5 release candidate",
-  "runId": 37253050057,
-  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37253050057",
+  "runId": 37255178728,
+  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37255178728",
   "jobs": [
     {
       "runner": "ubuntu-24.04",
@@ -21,7 +21,12 @@
       "runner": "macos-15-intel",
       "platform": "macos-x64",
       "status": "pass"
+    },
+    {
+      "runner": "ubuntu-24.04",
+      "platform": "user-installation-smoke",
+      "status": "pass"
     }
   ],
-  "completedAt": "2026-10-05T09:55:00+08:00"
+  "completedAt": "2026-10-05T10:28:00+08:00"
 }

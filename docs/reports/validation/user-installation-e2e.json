@@ -5,7 +5,7 @@
   "prefixKind": "temporary_user_prefix",
   "source": {
     "coreCommit": "a15b3114ff8a8da1e09660680d76c0ef8121c298",
-    "cliCommit": "71f7d8a",
+    "cliCommit": "ac05964e4fa39ea811dbbce1fc31d539b09a81ce",
     "coreVersion": "1.6.0-rc.1",
     "cliVersion": "0.1.0-rc.1"
   },
@@ -21,10 +21,15 @@
     "cliOnlyUpdatePreservedCore": true,
     "corePathArgumentRequired": false
   },
+  "ci": {
+    "runId": 37255178728,
+    "job": "user-install",
+    "status": "pass"
+  },
   "registry": {
     "npmAuthenticated": false,
     "npmPublishPerformed": false,
     "githubInstallAvailable": true
   },
-  "recordedAt": "2026-10-05T10:20:00+08:00"
+  "recordedAt": "2026-10-05T10:28:00+08:00"
 }
