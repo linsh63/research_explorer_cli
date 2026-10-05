@@ -1,6 +1,6 @@
 {
   "name": "research-explorer-cli",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-rc.1",
   "private": false,
   "type": "module",
   "description": "Research Explorer CLI: a Pi-based interface for the Auto Research Agent core.",
@@ -20,6 +20,7 @@
   "files": [
     "dist/",
     "docs/architecture/",
+    "docs/guides/",
     "docs/core-api-gaps.md",
     "docs/planning/",
     "docs/reports/stages/",
@@ -39,6 +40,7 @@
     "validate:c2": "node scripts/validate-c2.mjs",
     "validate:c3": "node scripts/validate-c3.mjs",
     "validate:c4": "node scripts/validate-c4.mjs",
+    "validate:c5": "node scripts/validate-c5.mjs",
     "prepack": "npm run build && npm run check:boundaries"
   },
   "dependencies": {

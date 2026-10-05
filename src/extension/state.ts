@@ -65,7 +65,7 @@ export function writeRecentContext(path: string, context: ResearchContextEntry):
 function parseContext(value: unknown): ResearchContextEntry | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
-  const base = item.schemaVersion === 1 && (item.phase === "C1" || item.phase === "C2" || item.phase === "C3" || item.phase === "C4") && typeof item.workspaceId === "string"
+  const base = item.schemaVersion === 1 && (item.phase === "C1" || item.phase === "C2" || item.phase === "C3" || item.phase === "C4" || item.phase === "C5") && typeof item.workspaceId === "string"
     && typeof item.projectId === "string" && typeof item.projectTitle === "string"
     && typeof item.projectStatus === "string" && typeof item.recordedAt === "string";
   if (!base) return null;

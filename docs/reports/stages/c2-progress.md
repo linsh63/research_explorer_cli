@@ -28,7 +28,7 @@
 
 The machine-readable result is [`../validation/c2-validation.json`](../validation/c2-validation.json). Unit tests cover routing, fixed choices, native manual chat, explicit write confirmation, mandatory gate refusal, candidate approval cancellation and degraded restoration.
 
-The cross-platform workflow, now extended in [`.github/workflows/c4.yml`](../../../.github/workflows/c4.yml), ran C0, C1 and the same real-Core C2 acceptance on Ubuntu 24.04 and macOS 14. Both jobs passed for commit `bb3b404`; the run is recorded in [`../validation/c2-ci.json`](../validation/c2-ci.json).
+The cross-platform workflow, now extended in [`.github/workflows/c5.yml`](../../../.github/workflows/c5.yml), ran C0, C1 and the same real-Core C2 acceptance on Ubuntu 24.04 and macOS 14. Both jobs passed for commit `bb3b404`; the run is recorded in [`../validation/c2-ci.json`](../validation/c2-ci.json).
 
 ## Result
 

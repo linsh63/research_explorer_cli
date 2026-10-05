@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "stage": "C5",
+  "status": "pass",
+  "releaseCandidate": "0.1.0-rc.1",
+  "platform": "linux/x64",
+  "endToEnd": {
+    "projectCreated": true,
+    "questionProposed": true,
+    "questionSelected": true,
+    "scopeApproved": true,
+    "scientificReportRendered": true,
+    "publicCoreOnly": true
+  },
+  "pi": {
+    "printMode": true,
+    "jsonMode": true,
+    "rpcSmokeOnly": true,
+    "sessionTree": true,
+    "fork": true,
+    "clone": true,
+    "autoCompactionControl": true,
+    "nativeChatAndAuthInherited": true
+  },
+  "package": {
+    "filename": "research-explorer-cli-0.1.0-rc.1.tgz",
+    "sha256": "cc261b21064f7b3641864d9eed0c68128df1a15d377eec50379caa744673fd73",
+    "entries": 88,
+    "packageOnly": true,
+    "licenseComplete": true,
+    "upgradeFrom": "0.1.0-alpha.4",
+    "rollbackTo": "0.1.0-alpha.4"
+  },
+  "security": {
+    "secretScan": true,
+    "coreTokenExcluded": true,
+    "confirmationTokenExcluded": true
+  },
+  "docs": {
+    "checkedFiles": 17,
+    "missingLinks": 0
+  },
+  "publishing": {
+    "gitTagCreated": false,
+    "githubReleaseCreated": false,
+    "npmPublished": false
+  },
+  "elapsedMs": 18346,
+  "recordedAt": "2026-10-05T01:50:23.164Z"
+}

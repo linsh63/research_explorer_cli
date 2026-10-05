@@ -10,7 +10,7 @@ The product reuses Pi's TUI, model authentication, sessions, streaming, tools, s
 
 ## Current status
 
-C0 through C4 are complete. Research Explorer supports Project context, research interaction modes, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
+C0 through C5 are complete. `0.1.0-rc.1` supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
 
 ```bash
 npm ci
@@ -20,6 +20,7 @@ npm run validate:c1
 npm run validate:c2
 npm run validate:c3
 npm run validate:c4
+npm run validate:c5
 node dist/launcher.js --version
 ```
 
@@ -49,11 +50,14 @@ Inside Research Explorer:
 /research-job-status
 /research-plugin-search vision
 /research-dependencies
+/research-report ./project-report.md
 ```
 
 Later runs use the saved Core discovery and recent Project automatically. Use `/research-open <project-id>` to switch Projects.
 
 Manual mode preserves normal Pi chat. Candidate mode offers Core-issued next actions plus free chat, other input and cancel. Auto mode allows Core to execute at most one zero-cost, permission-free question action per turn and still stops for mandatory approval.
+
+See the [command reference](docs/guides/command-reference.md) and [installation/recovery guide](docs/guides/installation-and-recovery.md).
 
 ## Architecture boundary
 

@@ -1,4 +1,4 @@
-name: C0-C4 integration
+name: C0-C5 release candidate
 
 on:
   push:
@@ -6,15 +6,17 @@ on:
   pull_request:
 
 jobs:
-  c4:
+  c5:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14]
+        os: [ubuntu-24.04, macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Research Explorer
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Checkout pinned Core
         uses: actions/checkout@v4
         with:
@@ -49,3 +51,7 @@ jobs:
         run: npm run validate:c4
         env:
           C4_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js
+      - name: C5 release audit
+        run: npm run validate:c5
+        env:
+          C5_CORE_ENTRY: ${{ github.workspace }}/core/dist/service/cli.js

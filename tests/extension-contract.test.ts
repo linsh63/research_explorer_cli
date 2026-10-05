@@ -140,15 +140,15 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
   return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, uiCalls, ctx };
 }
 
-test("C4 registers Project, Job, SSH, plugin commands and bounded tools", () => {
+test("C5 registers Project, Job, SSH, plugin, capability commands and bounded tools", () => {
   const h = harness();
   for (const command of ["research-job-submit", "research-ssh-setup", "research-plugin-search", "research-plugin-install", "research-plugin-update", "research-fork", "research-bundle-export", "research-bundle-import", "research-dependencies", "research-mode"]) assert.ok(h.commands.has(command), command);
-  assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action", "research_job", "research_plugins"]);
+  assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action", "research_job", "research_plugins", "research_capability"]);
   assert.ok(h.renderers.has(RESEARCH_EXPLORER_ENTRY));
   for (const event of ["session_start", "input", "before_agent_start", "turn_start", "turn_end", "session_shutdown"]) assert.ok(h.handlers.has(event), event);
 });
 
-test("research-new persists a C4 binding without credentials", async () => {
+test("research-new persists the rollback-compatible state schema", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-create-"));
   try {
     const stateFile = join(directory, "state.json");

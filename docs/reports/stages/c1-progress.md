@@ -26,7 +26,7 @@
 6. verify the exact bearer token is absent from both persistence files;
 7. install the packed CLI into a clean consumer directory and attach to Core again.
 
-The machine-readable Linux result is [`../validation/c1-validation.json`](../validation/c1-validation.json). The cross-platform workflow, now extended in [`.github/workflows/c4.yml`](../../../.github/workflows/c4.yml), ran the same real-Core gate on Ubuntu 24.04 and macOS 14; both jobs passed for commit `132ac55`. The recorded run is in [`../validation/c1-ci.json`](../validation/c1-ci.json). Core's earlier v1.6 platform release already validates its public Project path on both systems; this workflow adds the Research Explorer package and Pi extension path.
+The machine-readable Linux result is [`../validation/c1-validation.json`](../validation/c1-validation.json). The cross-platform workflow, now extended in [`.github/workflows/c5.yml`](../../../.github/workflows/c5.yml), ran the same real-Core gate on Ubuntu 24.04 and macOS 14; both jobs passed for commit `132ac55`. The recorded run is in [`../validation/c1-ci.json`](../validation/c1-ci.json). Core's earlier v1.6 platform release already validates its public Project path on both systems; this workflow adds the Research Explorer package and Pi extension path.
 
 Unit coverage verifies the command surface, creation/binding, recent-state recovery, Core refresh, honest empty context and fail-closed degraded restoration. C0 remains green as a regression gate.
 
