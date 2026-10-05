@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "stages": ["C0", "C1", "C2", "C3", "C4", "C5"],
   "status": "pass",
-  "sourceCommit": "ac05964e4fa39ea811dbbce1fc31d539b09a81ce",
+  "sourceCommit": "ae3186bf314733c0410e0c61efcb575eb6b9983e",
   "workflow": "C0-C5 release candidate",
-  "runId": 37255178728,
-  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37255178728",
+  "runId": 37275857119,
+  "runUrl": "https://github.com/linsh63/research_explorer_cli/actions/runs/37275857119",
   "jobs": [
     {
       "runner": "ubuntu-24.04",
@@ -28,5 +28,5 @@
       "status": "pass"
     }
   ],
-  "completedAt": "2026-10-05T10:28:00+08:00"
+  "completedAt": "2026-10-05T15:12:00+08:00"
 }

@@ -4,8 +4,9 @@
   "installMethod": "public_https_clone_build_user_prefix",
   "prefixKind": "temporary_user_prefix",
   "source": {
-    "coreCommit": "a15b3114ff8a8da1e09660680d76c0ef8121c298",
-    "cliCommit": "ac05964e4fa39ea811dbbce1fc31d539b09a81ce",
+    "coreRepository": "linsh63/research_explorer_core",
+    "coreCommit": "68a083929eae47974ea7a4ea503b5ff1b4a30f17",
+    "cliCommit": "ae3186bf314733c0410e0c61efcb575eb6b9983e",
     "coreVersion": "1.6.0-rc.1",
     "cliVersion": "0.1.0-rc.1"
   },
@@ -22,7 +23,7 @@
     "corePathArgumentRequired": false
   },
   "ci": {
-    "runId": 37255178728,
+    "runId": 37275857119,
     "job": "user-install",
     "status": "pass"
   },
@@ -31,5 +32,5 @@
     "npmPublishPerformed": false,
     "githubInstallAvailable": true
   },
-  "recordedAt": "2026-10-05T10:28:00+08:00"
+  "recordedAt": "2026-10-05T15:12:00+08:00"
 }
