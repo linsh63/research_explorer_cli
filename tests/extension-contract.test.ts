@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { createResearchExplorerExtension, RESEARCH_EXPLORER_ENTRY } from "../src/extension/index.js";
 import type { CoreConnection, DoctorReport, ProjectStatus } from "../src/core/types.js";
-import { CANDIDATE_FALLBACK_OPTIONS } from "../src/extension/candidate-ui.js";
+import { DIRECTION_FALLBACK_OPTIONS } from "../src/extension/direction-ui.js";
 import type { ExecutionMode, ResearchAction } from "../src/research/types.js";
 import { SecretInput } from "../src/extension/secret-input.js";
 
@@ -81,6 +81,7 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
     async query(input: any) {
       requests.push(input);
       const data = input.type === "project.status" ? status
+        : input.type === "workspace.projects" ? { schemaVersion: "1.0.0", workspaceId: status.workspaceId, projects: [{ ...status.project, branchName: "main", projectStatus: "active" }] }
         : input.type === "policy.get" ? policy()
           : input.type === "project.events" ? { events: [], nextSequence: null }
             : input.type === "conversation.get" ? { latestCandidates: { candidates: [{ id: "candidate-1", title: candidateAction.title, action: candidateAction }] } }
@@ -106,6 +107,7 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
   const registeredFlags = new Set<string>();
   const flags = new Map(Object.entries(options.flags ?? {}));
   const appended: Array<{ type: string; data: any }> = [];
+  const sentMessages: string[] = [];
   const uiCalls: any[][] = [];
   const fake = fakeClient(options.mode, options.candidateType);
   const selections = [...(options.selections ?? [])];
@@ -119,12 +121,23 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
     registerEntryRenderer: (name: string, value: unknown) => renderers.set(name, value),
     on: (name: string, value: unknown) => handlers.set(name, value),
     appendEntry: (type: string, data: unknown) => appended.push({ type, data }),
+    setSessionName: (name: string) => uiCalls.push(["session-name", name]),
+    sendUserMessage: (content: string) => sentMessages.push(content),
   };
   createResearchExplorerExtension({ connect: async () => { if (options.connectError) throw options.connectError; return fake.client; }, diagnose: async () => doctor })(pi as any);
   const ctx = {
     mode: options.extensionMode ?? "tui",
+    hasUI: (options.extensionMode ?? "tui") === "tui",
     cwd: directoryForTests(),
     sessionManager: { getBranch: () => options.entries ?? [] },
+    model: { provider: "test", id: "direction-model" },
+    modelRegistry: {
+      complete: async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify({ directions: [
+        { title: "梳理证据", goal: "确认关键证据缺口", nextStep: "检索三类直接相关工作", rationale: "先界定现有证据边界" },
+        { title: "形成假设", goal: "建立可证伪解释", nextStep: "写出目标与竞争假设", rationale: "为实验提供判别标准" },
+        { title: "设计实验", goal: "确定最低成本验证", nextStep: "定义基线、指标和实验单位", rationale: "尽早暴露可行性风险" },
+      ] }) }] }),
+    },
     ui: {
       input: async () => undefined,
       editor: async () => undefined,
@@ -137,32 +150,49 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
       setWidget: (...args: unknown[]) => uiCalls.push(["widget", ...args]),
     },
   };
-  return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, uiCalls, ctx };
+  return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, sentMessages, uiCalls, ctx };
 }
 
 test("C5 registers Project, Job, SSH, plugin, capability commands and bounded tools", () => {
   const h = harness();
   for (const command of ["research-job-submit", "research-ssh-setup", "research-plugin-search", "research-plugin-install", "research-plugin-update", "research-fork", "research-bundle-export", "research-bundle-import", "research-dependencies", "research-mode"]) assert.ok(h.commands.has(command), command);
+  for (const command of ["doctor", "project", "status", "mode", "next", "actions"]) assert.ok(h.commands.has(command), command);
   assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action", "research_job", "research_plugins", "research_capability"]);
   assert.ok(h.renderers.has(RESEARCH_EXPLORER_ENTRY));
   for (const event of ["session_start", "input", "before_agent_start", "turn_start", "turn_end", "session_shutdown"]) assert.ok(h.handlers.has(event), event);
 });
 
-test("research-new persists the rollback-compatible state schema", async () => {
+test("research-new binds only the Pi session and does not write a global recent Project", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-create-"));
   try {
     const stateFile = join(directory, "state.json");
     const h = harness({ flags: { "research-state-file": stateFile } });
     await h.handlers.get("session_start")({}, h.ctx);
     await h.commands.get("research-new").handler("C2 Project", h.ctx);
-    const persisted = JSON.parse(readFileSync(stateFile, "utf8"));
+    assert.equal(existsSync(stateFile), false);
+    const persisted = h.appended.filter((item) => item.type === RESEARCH_EXPLORER_ENTRY).at(-1)?.data;
     assert.equal(persisted.phase, "C4");
     assert.equal(persisted.mode, "manual");
     assert.doesNotMatch(JSON.stringify(persisted), /token|secret|password|bearer|authorization/i);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test("Job submission persists the public Job ID and excludes secret fields", async () => {
+test("a fresh session offers the Core project archive and can remain unbound", async () => {
+  const projectChoice = "C2 Project · 确定研究问题";
+  const selected = harness({ selections: [projectChoice] });
+  await selected.handlers.get("session_start")({}, selected.ctx);
+  assert.ok(selected.requests.some((request) => request.type === "workspace.projects"));
+  assert.equal(selected.appended.filter((item) => item.type === RESEARCH_EXPLORER_ENTRY).at(-1)?.data.projectTitle, "C2 Project");
+  assert.ok(selected.uiCalls.some((call) => call[0] === "session-name" && call[1] === "C2 Project"));
+
+  const free = harness({ selections: ["自由聊天（不绑定项目）"] });
+  await free.handlers.get("session_start")({}, free.ctx);
+  assert.ok(free.appended.some((item) => item.type === "research-explorer.unbound"));
+  assert.ok(free.uiCalls.some((call) => call[0] === "widget" && call[2] === undefined));
+  assert.ok(free.uiCalls.some((call) => call[0] === "status" && call[2] === undefined));
+});
+
+test("Job submission persists the public Job ID in the Pi session and excludes secret fields", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c3-job-"));
   try {
     const stateFile = join(directory, "state.json");
@@ -170,7 +200,8 @@ test("Job submission persists the public Job ID and excludes secret fields", asy
     await h.handlers.get("session_start")({}, h.ctx);
     const spec = { name: "test", dataRole: "exploration", studyId: null, execution: { kind: "bubblewrap", workspace: directory, command: "/bin/true", args: [], env: {}, artifactPaths: [] }, resources: { cpuCores: 1, memoryMiB: 128, diskMiB: 128, gpuCount: 0 }, limits: { wallTimeMs: 1000, cpuTimeSeconds: 1, maxOutputBytes: 1000, maxArtifactBytes: 1000 }, priority: 0, resumable: true, maxAttempts: 1, executionPhase: "general" };
     await h.commands.get("research-job-submit").handler(JSON.stringify(spec), h.ctx);
-    const persisted = JSON.parse(readFileSync(stateFile, "utf8"));
+    assert.equal(existsSync(stateFile), false);
+    const persisted = h.appended.filter((item) => item.type === RESEARCH_EXPLORER_ENTRY).at(-1)?.data;
     assert.deepEqual(persisted.jobIds, ["job-c3"]);
     assert.equal(persisted.activeJobId, "job-c3");
     assert.doesNotMatch(JSON.stringify(persisted), /confirmationToken|bearer|password/i);
@@ -201,17 +232,28 @@ test("confirmation token component masks every typed character", () => {
   assert.doesNotMatch(component.render(80).join("\n"), /confirmation-value|1234567890/);
 });
 
-test("candidate mode always presents free chat, other input and cancel", async () => {
+test("candidate mode lets Pi answer and then presents detailed research directions", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-candidate-"));
   try {
-    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("candidate") }], mode: "candidate", flags: { "research-state-file": join(directory, "state.json") }, selections: [CANDIDATE_FALLBACK_OPTIONS[0]] });
+    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("candidate") }], mode: "candidate", flags: { "research-state-file": join(directory, "state.json") }, selections: [DIRECTION_FALLBACK_OPTIONS[0]] });
     await h.handlers.get("session_start")({}, h.ctx);
     const result = await h.handlers.get("input")({ text: "Help me continue", source: "interactive" }, h.ctx);
     assert.deepEqual(result, { action: "continue" });
+    await h.handlers.get("turn_end")({ message: { role: "assistant", content: [{ type: "text", text: "先分析当前研究问题。" }] } }, h.ctx);
     const select = h.uiCalls.find((call) => call[0] === "select");
-    for (const option of CANDIDATE_FALLBACK_OPTIONS) assert.ok(select[2].includes(option));
+    for (const option of DIRECTION_FALLBACK_OPTIONS) assert.ok(select[2].includes(option));
+    assert.ok(select[2].some((option: string) => option.includes("目标：") && option.includes("下一步：") && option.includes("理由：")));
     assert.equal(h.requests.filter((request) => request.type === "candidate.choose").length, 0);
   } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("switching to candidate mode immediately opens detailed directions", async () => {
+  const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") }], mode: "manual", selections: [DIRECTION_FALLBACK_OPTIONS[0]] });
+  await h.handlers.get("session_start")({}, h.ctx);
+  await h.commands.get("mode").handler("candidate", h.ctx);
+  const select = h.uiCalls.find((call) => call[0] === "select" && call[1] === "选择下一步研究方向");
+  assert.ok(select);
+  assert.ok(select[2].some((option: string) => option.includes("目标：") && option.includes("下一步：")));
 });
 
 function directoryForTests(): string { return process.cwd(); }
@@ -251,12 +293,12 @@ test("non-gate action tool requires confirmation and executes as the user", asyn
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test("scope candidate UI requires explicit confirmation before user execution", async () => {
+test("Core legal-action picker still requires explicit confirmation for scope approval", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-approval-"));
   try {
     const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("candidate") }], mode: "candidate", candidateType: "scope.approve", flags: { "research-state-file": join(directory, "state.json") }, selections: ["1. Approve scope [需要人工批准]"], confirmations: [false] });
     await h.handlers.get("session_start")({}, h.ctx);
-    assert.deepEqual(await h.handlers.get("input")({ text: "Approve", source: "interactive" }, h.ctx), { action: "handled" });
+    await h.commands.get("actions").handler("Approve", h.ctx);
     assert.equal(h.requests.some((item) => item.type === "candidate.choose"), false);
     assert.ok(h.uiCalls.some((call) => call[0] === "confirm" && call[1] === "批准科研范围？"));
   } finally { rmSync(directory, { recursive: true, force: true }); }

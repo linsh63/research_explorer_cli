@@ -19,6 +19,8 @@ rexplore
 
 This places `research-explorer-core` and `rexplore` in the same user PATH, so `rexplore` discovers and starts Core automatically from any working directory. The legacy `auto-research-core` command remains a temporary compatibility alias.
 
+With an interactive terminal, plain `rexplore` opens Pi's saved-session selector. Continuing a session restores that session's Project binding. Starting a fresh chat opens the Project picker; choosing free chat leaves it unbound instead of inheriting a global recent Project.
+
 When migrating an existing user-prefix installation, remove the deprecated package first to avoid npm command-link collisions. The repository installer detects and performs this migration automatically:
 
 ```bash
@@ -94,7 +96,7 @@ Enabling a permission only allows the service to evaluate corresponding commands
 
 ## Rollback
 
-Research Explorer `0.1.2` writes the same CLI state shape as `0.1.0`; package rollback can reopen saved Project and Job IDs. Version `0.1.2` migrates the default Core package name while retaining discovery of the old executable as a compatibility fallback.
+Research Explorer `0.2.0` reads existing session-bound Project entries from `0.1.x`. It stops reading and writing the global recent-Project fallback, so new chats no longer inherit an unrelated Project. Rolling back to `0.1.2` restores the old startup behavior.
 
 CLI rollback does not downgrade a Core database. If Core was upgraded and migrated, stop Core and restore its pre-upgrade backup before running an older Core version.
 

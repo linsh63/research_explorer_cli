@@ -4,6 +4,7 @@ import type { ProjectStatus } from "../core/types.js";
 import type { ExecutionMode } from "../research/types.js";
 
 export const RESEARCH_EXPLORER_ENTRY = "research-explorer.context";
+export const RESEARCH_EXPLORER_UNBOUND_ENTRY = "research-explorer.unbound";
 
 export interface ResearchContextEntry {
   schemaVersion: 1;
@@ -38,6 +39,7 @@ export function contextFromStatus(status: ProjectStatus, mode: ExecutionMode = "
 export function restoreContext(entries: readonly unknown[]): ResearchContextEntry | null {
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const entry = entries[index] as { type?: string; customType?: string; data?: unknown };
+    if (entry?.type === "custom" && entry.customType === RESEARCH_EXPLORER_UNBOUND_ENTRY) return null;
     if (entry?.type === "custom" && entry.customType === RESEARCH_EXPLORER_ENTRY) {
       const context = parseContext(entry.data);
       if (context) return context;

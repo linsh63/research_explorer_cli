@@ -48,6 +48,17 @@ export interface ProjectStatus {
   persistence: { branchName: string; lastEventSequence: number; eventCount: number };
 }
 
+export interface WorkspaceProjectSummary extends ProjectSummary {
+  branchName: string;
+  projectStatus: "active" | "archived";
+}
+
+export interface WorkspaceProjects {
+  schemaVersion: string;
+  workspaceId: string;
+  projects: WorkspaceProjectSummary[];
+}
+
 export interface CoreResult<T = unknown> {
   status: "accepted" | "rejected" | "ok";
   projectId: string | null;

@@ -2,6 +2,15 @@
 
 ## Project and interaction
 
+- `/project` — choose an existing Project, create one, or return to unbound free chat
+- `/status`
+- `/mode manual|candidate|auto`
+- `/next [instruction]` — generate detailed candidate directions
+- `/actions [instruction]` — show Core-legal state transitions
+- `/report [path]`
+
+Long `research-*` spellings remain compatible during the transition:
+
 - `/research-new <title>`
 - `/research-open <project-id>`
 - `/research-status`
@@ -9,6 +18,8 @@
 - `/research-next [instruction]`
 - `/research-fork <branch> <reason>`
 - `/research-report <path>`
+
+Interactive startup opens Pi's session selector. A new session then opens the Research Explorer Project picker. Manual mode has no persistent research widget; candidate mode generates direction choices immediately and after each completed assistant answer.
 
 ## Scientific capabilities
 
@@ -48,4 +59,3 @@ Pi terminal packages remain managed by Pi `/packages`.
 - `/research-dependencies`
 
 Bundle import does not restore SSH, OAuth, secret or plugin installation environment.
-

@@ -2,7 +2,7 @@
 
 - Status: stable release passed on Linux x64, macOS arm64 and macOS x64
 - Completed locally: 2026-10-05
-- Release: `0.1.2`
+- Release: `0.2.0`
 
 ## Delivered
 
@@ -11,10 +11,13 @@
 - Pi print and JSON automation compatibility; RPC retained only for acceptance/debugging.
 - Session tree, clone, fork and automatic-compaction control regression.
 - Package-only installation, license/notices, local documentation-link and secret gates.
-- Real package upgrade from `0.1.1` to `0.1.2` and rollback to `0.1.1` using the same saved state.
+- Real package upgrade from `0.1.2` to `0.2.0` and rollback to `0.1.2` using the same saved state.
 - Installation, permissions, offline, upgrade and recovery guides.
 - User-prefix installer that installs independently versioned `research-explorer-core` and `research-explorer-cli` packages from npm, with a public HTTPS repository fallback.
 - Unified Core package and executable naming, with legacy executable discovery retained for existing installations.
+- Pi session selection plus a public Core Project picker at startup.
+- Session-scoped Project binding without global recent-Project inheritance.
+- Compact commands, quiet manual mode, localized stages and detailed model-generated direction choices.
 
 ## Local evidence
 

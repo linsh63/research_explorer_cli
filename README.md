@@ -21,7 +21,7 @@ The installer places independently updatable `research-explorer-core` and `rexpl
 
 ## Current status
 
-C0 through C5 are complete. Stable `0.1.2` uses the unified `research-explorer-core` package name and supports Project context, research interaction modes, scientific capabilities and reports, persistent Jobs, Artifacts, SSH setup, Core research plugins, forks and Bundle v2 migration.
+C0 through C5 are complete. Version `0.2.0` adds a startup session/project picker, session-scoped Project binding, compact commands, a quiet manual mode, human-readable stages and model-generated candidate directions after each answer.
 
 Existing `auto-research-agent` installations must remove the deprecated package before installing the renamed Core because both packages expose compatibility command names:
 
@@ -60,20 +60,21 @@ node dist/launcher.js --offline \
 Inside Research Explorer:
 
 ```text
-/research-doctor
-/research-new My first research project
-/research-status
-/research-mode candidate
-/research-next
+/doctor
+/project
+/status
+/mode candidate
+/next
+/actions
 /research-job-status
 /research-plugin-search vision
 /research-dependencies
-/research-report ./project-report.md
+/report ./project-report.md
 ```
 
-Later runs use the saved Core discovery and recent Project automatically. Use `/research-open <project-id>` to switch Projects.
+An interactive `rexplore` launch opens Pi's session selector. A fresh chat then offers existing Core Projects, a new Project, or unbound free chat. Use `/project` to switch later.
 
-Manual mode preserves normal Pi chat. Candidate mode offers Core-issued next actions plus free chat, other input and cancel. Auto mode allows Core to execute at most one zero-cost, permission-free question action per turn and still stops for mandatory approval.
+Manual mode preserves normal Pi chat and hides research status. Candidate mode lets Pi answer normally, then generates detailed direction cards with a goal, next step and rationale. `/actions` separately shows Core-issued legal state transitions. Auto mode allows Core to execute at most one zero-cost, permission-free question action per turn and still stops for mandatory approval.
 
 See the [command reference](docs/guides/command-reference.md) and [installation/recovery guide](docs/guides/installation-and-recovery.md).
 

@@ -7,7 +7,7 @@ C0 intentionally does not change or push the Core repository. The CLI also does 
 
 | Capability | Required result |
 | --- | --- |
-| `workspace.projects` | Paginated project summaries with update time and pending state |
+| `workspace.projects` | **Resolved in Core 1.6.1:** bounded project summaries with update time and branch/status data |
 | `project.pending-actions` | Legal next actions and gates requiring user handling |
 | `job.list` | Project filtered and paginated jobs with status and update time |
 | `artifact.export` | Policy checked export to a user selected destination without exposing CAS paths |
@@ -17,6 +17,6 @@ Each capability must be added through Core contracts, application/service handle
 
 This register resolves the scope conflict in the original C0 plan: the independent CLI spike is complete, while these Core owned changes remain prerequisites for the affected navigation and later workflows.
 
-C1 consumes the existing authenticated `/v1/health` endpoint directly through the public service protocol, so health is available to `/research-doctor`. A first-class SDK method remains desirable when the Core package is published. `workspace.projects` remains the blocker for an interactive Project picker; C1 therefore opens an explicit Project ID without a private fallback.
+C1 consumes the existing authenticated `/v1/health` endpoint directly through the public service protocol, so health is available to `/doctor`. Core 1.6.1 publishes `workspace.projects`; CLI 0.2.0 uses it for the startup and `/project` pickers without a private fallback. A first-class SDK convenience method remains desirable.
 
 C3 tracks the last 100 public Job IDs in non-sensitive CLI state because `job.list` is not published. Artifact status is displayed from `job.get`; direct filesystem export remains unavailable until `artifact.export` exists. These are explicit capability limits rather than private fallbacks.

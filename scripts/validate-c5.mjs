@@ -9,7 +9,7 @@ import { connectLocalCore } from "../dist/core/client.js";
 import { ResearchRuntime } from "../dist/research/runtime.js";
 import { createRpcTracker, commandNames, latestBinding, uiResponder } from "./lib/rpc-client.mjs";
 
-const root = resolve("."), launcher = resolve("dist/launcher.js"), coreEntry = resolve(process.env.C5_CORE_ENTRY ?? process.env.C4_CORE_ENTRY ?? "../auto-research-agent/dist/service/cli.js"), reportPath = resolve("docs/reports/validation/c5-release-audit.json"), previousCommit = "b4c7a14b6f32a3a48e7dc6eb537b783071c36b5f";
+const root = resolve("."), launcher = resolve("dist/launcher.js"), coreEntry = resolve(process.env.C5_CORE_ENTRY ?? process.env.C4_CORE_ENTRY ?? "../auto-research-agent/dist/service/cli.js"), reportPath = resolve("docs/reports/validation/c5-release-audit.json"), previousCommit = "0713ecf9583936035c0981b24af3115679b9eaf8";
 assert.ok(existsSync(coreEntry), `Core entry is missing: ${coreEntry}`);
 const started = Date.now(), validationRoot = mkdtempSync(join(tmpdir(), "rexplore-c5-")), coreDataDir = join(validationRoot, "core"), databasePath = join(validationRoot, "research.db"), workspaceId = "workspace:c5-validation", stateFile = join(validationRoot, "state.json"), sessionDir = join(validationRoot, "sessions"), sessionFile = join(sessionDir, "c5.jsonl"), renderedReport = join(validationRoot, "research-report.md");
 const tracker = createRpcTracker(), cleanNetworkEnv = { ...process.env }; for (const key of ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]) delete cleanNetworkEnv[key]; let corePid = null;
@@ -21,12 +21,12 @@ try {
   const flags = ["--session", sessionFile, "--session-dir", sessionDir, "--research-core-data-dir", coreDataDir, "--research-core-database", databasePath, "--research-state-file", stateFile, "--research-workspace", workspaceId, "--research-no-core-autostart"];
   const rpc = tracker.start(launcher, root, flags, uiResponder({ confirm: true, select: (options) => options[0] }));
   const commands = commandNames(await rpc.request("get_commands"));
-  for (const command of ["research-capabilities", "research-capability", "research-report"]) assert.ok(commands.includes(command), `Missing ${command}`);
+  for (const command of ["project", "status", "mode", "next", "actions", "capabilities", "capability", "report"]) assert.ok(commands.includes(command), `Missing ${command}`);
   await rpc.request("prompt", { message: "/research-new C5 end-to-end report project" });
   await rpc.request("prompt", { message: "/research-mode candidate" });
-  await rpc.request("prompt", { message: "/research-next Propose the first question" });
-  await rpc.request("prompt", { message: "/research-next Select the proposed question" });
-  await rpc.request("prompt", { message: "/research-next Approve the bounded scope" });
+  await rpc.request("prompt", { message: "/actions Propose the first question" });
+  await rpc.request("prompt", { message: "/actions Select the proposed question" });
+  await rpc.request("prompt", { message: "/actions Approve the bounded scope" });
   const binding = latestBinding((await rpc.request("get_entries")).data?.entries), runtime = new ResearchRuntime(client, workspaceId, binding.projectId), scoped = await runtime.status();
   assert.equal(scoped.project.status, "scoped");
   await rpc.request("prompt", { message: `/research-report ${renderedReport}` });
@@ -49,18 +49,19 @@ try {
 
   const currentPack = packProject(root, join(validationRoot, "current-pack")), entries = new Set(currentPack.metadata.files.map((item) => item.path));
   for (const required of ["LICENSE", "NOTICE", "SECURITY.md", "THIRD_PARTY_NOTICES.md", "README.md", "dist/launcher.js", "dist/extension/index.js"]) assert.ok(entries.has(required), `Package missing ${required}`);
-  assert.equal(currentPack.metadata.version, "0.1.2");
+  assert.equal(currentPack.metadata.version, "0.2.0");
   const previousPack = packPrevious(join(validationRoot, "previous"));
   const consumer = join(validationRoot, "consumer"); mkdirSync(consumer); writeFileSync(join(consumer, "package.json"), JSON.stringify({ name: "c5-consumer", private: true }));
-  installTarball(consumer, previousPack.tarball); assert.equal(installedVersion(consumer), "0.1.1"); runInstalled(consumer, printArgs);
-  installTarball(consumer, currentPack.tarball); assert.equal(installedVersion(consumer), "0.1.2"); runInstalled(consumer, printArgs);
-  installTarball(consumer, previousPack.tarball); assert.equal(installedVersion(consumer), "0.1.1"); runInstalled(consumer, printArgs);
+  installTarball(consumer, previousPack.tarball); assert.equal(installedVersion(consumer), "0.1.2"); runInstalled(consumer, printArgs);
+  installTarball(consumer, currentPack.tarball); assert.equal(installedVersion(consumer), "0.2.0"); runInstalled(consumer, printArgs);
+  installTarball(consumer, previousPack.tarball); assert.equal(installedVersion(consumer), "0.1.2"); runInstalled(consumer, printArgs);
 
   const docs = checkLocalDocLinks(resolve("README.md"), resolve("docs")); assert.deepEqual(docs.missing, []);
-  const token = readFileSync(discovery.tokenFile, "utf8").trim(), persistedFiles = [sessionFile, stateFile, renderedReport, currentPack.tarball];
+  assert.equal(existsSync(stateFile), false, "A fresh Pi session must not write the deprecated global recent-Project file");
+  const token = readFileSync(discovery.tokenFile, "utf8").trim(), persistedFiles = [sessionFile, renderedReport, currentPack.tarball];
   for (const path of persistedFiles) assert.equal(readFileSync(path).includes(Buffer.from(token)), false, `Token leaked to ${relative(root, path)}`);
 
-  const audit = { schemaVersion: 1, stage: "C5", status: "pass", releaseVersion: "0.1.2", platform: `${process.platform}/${process.arch}`, endToEnd: { projectCreated: true, questionProposed: true, questionSelected: true, scopeApproved: true, scientificReportRendered: true, publicCoreOnly: true }, pi: { printMode: true, jsonMode: true, rpcSmokeOnly: true, sessionTree: true, fork: true, clone: true, autoCompactionControl: true, nativeChatAndAuthInherited: true }, package: { filename: currentPack.metadata.filename, sha256: sha256(readFileSync(currentPack.tarball)), entries: currentPack.metadata.entryCount, packageOnly: true, licenseComplete: true, upgradeFrom: "0.1.1", rollbackTo: "0.1.1" }, security: { secretScan: true, coreTokenExcluded: true, confirmationTokenExcluded: true }, docs: { checkedFiles: docs.checked, missingLinks: 0 }, publishing: { gitTagCreated: false, githubReleaseCreated: false, npmPublished: process.env.C5_EXPECT_NPM_PUBLISHED === "1" }, elapsedMs: Date.now() - started, recordedAt: new Date().toISOString() };
+  const audit = { schemaVersion: 1, stage: "C5", status: "pass", releaseVersion: "0.2.0", platform: `${process.platform}/${process.arch}`, endToEnd: { projectCreated: true, questionProposed: true, questionSelected: true, scopeApproved: true, scientificReportRendered: true, publicCoreOnly: true }, pi: { printMode: true, jsonMode: true, rpcSmokeOnly: true, sessionTree: true, fork: true, clone: true, autoCompactionControl: true, nativeChatAndAuthInherited: true }, package: { filename: currentPack.metadata.filename, sha256: sha256(readFileSync(currentPack.tarball)), entries: currentPack.metadata.entryCount, packageOnly: true, licenseComplete: true, upgradeFrom: "0.1.2", rollbackTo: "0.1.2" }, security: { secretScan: true, coreTokenExcluded: true, confirmationTokenExcluded: true }, docs: { checkedFiles: docs.checked, missingLinks: 0 }, publishing: { gitTagCreated: false, githubReleaseCreated: false, npmPublished: process.env.C5_EXPECT_NPM_PUBLISHED === "1" }, elapsedMs: Date.now() - started, recordedAt: new Date().toISOString() };
   writeAtomic(reportPath, `${JSON.stringify(audit, null, 2)}\n`); console.log(JSON.stringify(audit));
 } finally { tracker.shutdown(); if (!corePid && existsSync(join(coreDataDir, "core-service.json"))) try { corePid = JSON.parse(readFileSync(join(coreDataDir, "core-service.json"), "utf8")).pid; } catch {} if (corePid) await stopCore(corePid, coreDataDir).catch(() => {}); rmSync(validationRoot, { recursive: true, force: true }); }
 

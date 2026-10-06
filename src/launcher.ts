@@ -11,7 +11,9 @@ const extension = fileURLToPath(new URL("./extension/index.js", import.meta.url)
 if (!existsSync(piCli)) throw new Error(`Pinned Pi CLI entry is missing: ${piCli}`);
 if (!existsSync(extension)) throw new Error(`Research Explorer extension is missing: ${extension}`);
 
-const child = spawn(process.execPath, [piCli, "--extension", extension, ...process.argv.slice(2)], {
+const userArgs = process.argv.slice(2);
+const startupArgs = userArgs.length === 0 && process.stdin.isTTY && process.stdout.isTTY ? ["--resume"] : userArgs;
+const child = spawn(process.execPath, [piCli, "--extension", extension, ...startupArgs], {
   stdio: "inherit",
   env: { ...process.env, RESEARCH_EXPLORER_LAUNCHED_BY: "rexplore" },
   windowsHide: true,
