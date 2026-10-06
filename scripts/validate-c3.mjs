@@ -86,9 +86,8 @@ try {
 
   await resumed.close();
   const token = readFileSync(discovery.tokenFile, "utf8").trim();
-  assert.equal(readFileSync(sessionFile, "utf8").includes(token), false); assert.equal(readFileSync(stateFile, "utf8").includes(token), false);
-  const persisted = JSON.parse(readFileSync(stateFile, "utf8"));
-  assert.ok(persisted.jobIds.includes(jobId) && persisted.jobIds.includes(cancelId));
+  assert.equal(readFileSync(sessionFile, "utf8").includes(token), false); assert.equal(existsSync(stateFile), false);
+  assert.ok(binding.jobIds.includes(jobId) && binding.jobIds.includes(cancelId));
 
   const report = { schemaVersion: 1, stage: "C3", status: "pass", platform: `${process.platform}/${process.arch}`, jobs: { persistedAfterCliExit: true, restoredAfterRestart: true, sseMonitorRegistered: true, cancelled: true, staleLeaseRejected: true }, artifacts: { displayed: true, internalUriHidden: true, count: completed.artifacts.length }, ssh: { wizardRegistered: true, trustGate: true, privateKeyInputAbsent: true }, secrets: { confirmationTokenTuiOnly: true, tokenExcludedFromPersistence: true }, commands: commands.filter((name) => name.startsWith("research-")), assertions: { realCore: true, realPiRpc: true, publicWorkerProtocol: true, noModelCall: true }, elapsedMs: Date.now() - started, recordedAt: new Date().toISOString() };
   writeAtomic(reportPath, `${JSON.stringify(report, null, 2)}\n`); console.log(JSON.stringify(report));

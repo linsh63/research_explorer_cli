@@ -85,9 +85,9 @@ try {
   for (const command of ["research-mode", "research-next"]) assert.ok(commands.includes(command), `Missing ${command}`);
   await rpc.request("prompt", { message: "/research-new C2 interactive project" });
   await rpc.request("prompt", { message: "/research-mode candidate" });
-  await rpc.request("prompt", { message: "/research-next Show candidates" });
+  await rpc.request("prompt", { message: "/actions Show Core-legal candidates" });
   await rpc.request("prompt", { message: "/research-mode auto" });
-  await rpc.request("prompt", { message: "/research-next Execute one bounded action" });
+  await rpc.request("prompt", { message: "/actions Execute one bounded action" });
   const entries = await rpc.request("get_entries");
   const binding = latestBinding(entries.data?.entries);
   assert.equal(binding?.mode, "auto");
@@ -98,7 +98,7 @@ try {
 
   const token = readFileSync(discovery.tokenFile, "utf8").trim();
   assert.equal(readFileSync(sessionFile, "utf8").includes(token), false);
-  assert.equal(readFileSync(stateFile, "utf8").includes(token), false);
+  assert.equal(existsSync(stateFile), false);
 
   const report = {
     schemaVersion: 1,
@@ -106,7 +106,7 @@ try {
     status: "pass",
     platform: `${process.platform}/${process.arch}`,
     entryEquivalence: { direct: "question.proposed", candidate: "question.proposed", auto: "question.proposed", semanticActionEqual: true },
-    candidateUi: { fixedFallbacks: ["继续用原输入自由聊天", "输入其他行动", "取消"], freeInputLast: true },
+    candidateUi: { detailedDirectionsAfterAnswer: true, immediateOnModeEntry: true, fixedFallbacks: ["自由聊天（返回输入框）", "输入自己的方向", "重新生成候选", "取消"], coreActionsSeparate: true },
     gates: { autoScopeApprovalBlocked: true, agentScopeApprovalRejected: true, explicitUserApprovalAccepted: true },
     persistence: { mode: binding.mode, conversationSessionId: true, tokenExcluded: true },
     commands: commands.filter((name) => name.startsWith("research-")),

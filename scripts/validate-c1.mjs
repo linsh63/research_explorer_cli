@@ -43,7 +43,7 @@ try {
   const failedDiscovery = existsSync(join(coreDataDir, "core-service.json")) ? JSON.parse(readFileSync(join(coreDataDir, "core-service.json"), "utf8")) : null;
   assert(binding, `Project binding was not written to the Pi session: ${JSON.stringify({ entries: entries.data?.entries, discovery: failedDiscovery, pidAlive: failedDiscovery ? pidAlive(failedDiscovery.pid) : false, state: existsSync(stateFile) ? readFileSync(stateFile, "utf8") : null, events: first.events() })}`);
   assert(binding.workspaceId === workspaceId, "Project binding used the wrong Workspace");
-  assert(JSON.parse(readFileSync(stateFile, "utf8")).projectId === binding.projectId, "Recent Project state was not persisted");
+  assert(!existsSync(stateFile), "A fresh session must not write the deprecated global recent-Project state");
   const discovery = await waitForDiscovery(coreDataDir);
   activeCorePid = discovery.pid;
   const statusBeforeRestart = await queryStatus(discovery, workspaceId, binding.projectId);
@@ -67,7 +67,6 @@ try {
   const sessionText = readFileSync(sessionFile, "utf8");
   const token = readFileSync(restartedDiscovery.tokenFile, "utf8").trim();
   assert(!sessionText.includes(token), "Core bearer token leaked into the Pi session");
-  assert(!readFileSync(stateFile, "utf8").includes(token), "Core bearer token leaked into recent Project state");
 
   const packed = packProject(join(validationRoot, "pack"));
   const installed = await verifyPackedInstall(packed, join(validationRoot, "consumer"), {
@@ -85,10 +84,10 @@ try {
     product: "Research Explorer",
     platform: `${process.platform}/${process.arch}`,
     core: { serviceVersion: restartedDiscovery.capabilities.serviceVersion, schemaVersion: restartedDiscovery.capabilities.schemaVersion, restarted: true },
-    project: { workspaceId, projectId: binding.projectId, restoredAfterCoreRestart: true, restoredFromPiSession: true, restoredFromRecentState: true },
+    project: { workspaceId, projectId: binding.projectId, restoredAfterCoreRestart: true, restoredFromPiSession: true, restoredFromRecentState: false, globalStateAbsent: true },
     commands: commands.filter((name) => name.startsWith("research-")),
     package: { filename: packed.metadata.filename, sha256: sha256(readFileSync(packed.tarball)), entries: packed.metadata.entryCount, statusCommandHandled: installed },
-    assertions: { autoStart: true, attach: true, doctor: true, tokenExcludedFromSession: true, tokenExcludedFromState: true, noModelCall: true, packageOnlyInstall: true },
+    assertions: { autoStart: true, attach: true, doctor: true, tokenExcludedFromSession: true, globalRecentStateAbsent: true, noModelCall: true, packageOnlyInstall: true },
     elapsedMs: Date.now() - started,
     recordedAt: new Date().toISOString(),
   };

@@ -10,12 +10,15 @@
     "semanticActionEqual": true
   },
   "candidateUi": {
+    "detailedDirectionsAfterAnswer": true,
+    "immediateOnModeEntry": true,
     "fixedFallbacks": [
-      "继续用原输入自由聊天",
-      "输入其他行动",
+      "自由聊天（返回输入框）",
+      "输入自己的方向",
+      "重新生成候选",
       "取消"
     ],
-    "freeInputLast": true
+    "coreActionsSeparate": true
   },
   "gates": {
     "autoScopeApprovalBlocked": true,
@@ -64,6 +67,6 @@
     "realPiRpc": true,
     "noModelCall": true
   },
-  "elapsedMs": 1365,
-  "recordedAt": "2026-10-05T01:58:53.115Z"
+  "elapsedMs": 1279,
+  "recordedAt": "2026-10-06T04:21:23.038Z"
 }

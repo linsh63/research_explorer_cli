@@ -11,10 +11,11 @@
   },
   "project": {
     "workspaceId": "workspace:c1-validation",
-    "projectId": "program-6a487451-2e25-4899-b8a2-1183b22d070f",
+    "projectId": "program-43ff7cd7-fa48-4eab-8360-49afba05b330",
     "restoredAfterCoreRestart": true,
     "restoredFromPiSession": true,
-    "restoredFromRecentState": true
+    "restoredFromRecentState": false,
+    "globalStateAbsent": true
   },
   "commands": [
     "research-job-submit",
@@ -49,9 +50,9 @@
     "research-next"
   ],
   "package": {
-    "filename": "research-explorer-cli-0.1.0-rc.1.tgz",
-    "sha256": "5e14277ae5a64336e79687298074e2299a2e78ddd1779c8aa3e45e0932bb6382",
-    "entries": 88,
+    "filename": "research-explorer-cli-0.2.0.tgz",
+    "sha256": "d73507688084282d62e8328cd11bfb0918b6c45b997302227e3c6b64c1adb3ea",
+    "entries": 92,
     "statusCommandHandled": true
   },
   "assertions": {
@@ -59,10 +60,10 @@
     "attach": true,
     "doctor": true,
     "tokenExcludedFromSession": true,
-    "tokenExcludedFromState": true,
+    "globalRecentStateAbsent": true,
     "noModelCall": true,
     "packageOnlyInstall": true
   },
-  "elapsedMs": 24175,
-  "recordedAt": "2026-10-05T01:58:50.569Z"
+  "elapsedMs": 11084,
+  "recordedAt": "2026-10-06T04:21:06.640Z"
 }
