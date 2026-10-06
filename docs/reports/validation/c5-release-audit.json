@@ -43,8 +43,8 @@
   "publishing": {
     "gitTagCreated": false,
     "githubReleaseCreated": false,
-    "npmPublished": false
+    "npmPublished": true
   },
-  "elapsedMs": 42389,
-  "recordedAt": "2026-10-06T04:05:48.786Z"
+  "elapsedMs": 24526,
+  "recordedAt": "2026-10-06T04:23:11.878Z"
 }

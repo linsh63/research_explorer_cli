@@ -5,17 +5,17 @@
   "packages": [
     {
       "name": "research-explorer-core",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "distTag": "latest",
-      "integrity": "sha512-uxEa9DeXWmPgm77PtTSqJK4snZpirf3JHM1PbqZyzruvpIpngYJ723flnrju6/69ZmlduoEQdVQB2/Oglb1dGQ==",
-      "shasum": "ac2fdd77ac36aed0ce5f3b59787c7c76b6d19354"
+      "integrity": "sha512-XxPKTc4lhkj0YITzfuVu06MtkZdSvhug3RuacE9+C7v3t7TieqGsj97iIWebsO7T12yA2N8kDpZttFyEBtP3dg==",
+      "shasum": "82f7416931dc4fbc2e2f5f4100c227fd35603f98"
     },
     {
       "name": "research-explorer-cli",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "distTag": "latest",
-      "integrity": "sha512-inpHAmhdv1Awp/7p+Wq7n+c3SrWEPOSdYse11Tuik5nGlflhVZKt0MKAar8vwMLW4lbR22iA5haN83NTsmxPEw==",
-      "shasum": "680dd595d5d4c3815cbee98c839003ad3f1bf44a"
+      "integrity": "sha512-BhRUQ5K+qJW6iCrxNMsYN7efyJYO0U9u15rLLwBqbAcmJuToij76rIDyhd1LJlqr0zGD23l8KSaNCXLc/zwPTA==",
+      "shasum": "a7b9cdec846dc65b7821820ee9d749bc1976f952"
     }
   ],
   "deprecatedPackages": [
@@ -34,5 +34,5 @@
   },
   "gitTagCreated": false,
   "githubReleaseCreated": false,
-  "publishedAt": "2026-10-05T21:04:00+08:00"
+  "publishedAt": "2026-10-06T12:20:00+08:00"
 }
