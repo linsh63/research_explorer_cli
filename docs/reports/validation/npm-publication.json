@@ -12,10 +12,10 @@
     },
     {
       "name": "research-explorer-cli",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "distTag": "latest",
-      "integrity": "sha512-BhRUQ5K+qJW6iCrxNMsYN7efyJYO0U9u15rLLwBqbAcmJuToij76rIDyhd1LJlqr0zGD23l8KSaNCXLc/zwPTA==",
-      "shasum": "a7b9cdec846dc65b7821820ee9d749bc1976f952"
+      "integrity": "sha512-nin7lonAT2rEEIFgI3KFuHi8TRVuk7IUdxEfG1QDVQj2zvcz2TDMyYblZ/BGlNbv2aw+PNtTwgktjRGgGYtyOw==",
+      "shasum": "fa5fafcbeefc4c9666a7f281d82d263d087d09b8"
     }
   ],
   "deprecatedPackages": [
@@ -34,5 +34,5 @@
   },
   "gitTagCreated": false,
   "githubReleaseCreated": false,
-  "publishedAt": "2026-10-06T12:20:00+08:00"
+  "publishedAt": "2026-10-08T14:17:00+08:00"
 }
