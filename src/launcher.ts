@@ -12,10 +12,10 @@ if (!existsSync(piCli)) throw new Error(`Pinned Pi CLI entry is missing: ${piCli
 if (!existsSync(extension)) throw new Error(`Research Explorer extension is missing: ${extension}`);
 
 const userArgs = process.argv.slice(2);
-const startupArgs = userArgs.length === 0 && process.stdin.isTTY && process.stdout.isTTY ? ["--resume"] : userArgs;
-const child = spawn(process.execPath, [piCli, "--extension", extension, ...startupArgs], {
+const showStartup = userArgs.length === 0 && process.stdin.isTTY && process.stdout.isTTY;
+const child = spawn(process.execPath, [piCli, "--extension", extension, ...userArgs], {
   stdio: "inherit",
-  env: { ...process.env, RESEARCH_EXPLORER_LAUNCHED_BY: "rexplore" },
+  env: { ...process.env, RESEARCH_EXPLORER_LAUNCHED_BY: "rexplore", RESEARCH_EXPLORER_SHOW_STARTUP: showStartup ? "1" : "0" },
   windowsHide: true,
 });
 

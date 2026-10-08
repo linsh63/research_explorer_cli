@@ -63,8 +63,9 @@ export function registerResearchTools(pi: ExtensionAPI, host: ResearchToolHost):
   pi.registerTool({
     name: "research_converse",
     label: "Research conversation",
-    description: "Ask Core for legal next ResearchAction candidates. In auto mode Core may execute one bounded action.",
-    promptSnippet: "Request legal ResearchAction candidates from Core",
+    description: "Request Core candidates only for early question proposal, question selection, or scope approval. This is not a general workflow planner and must not be used to choose later ResearchRun stages.",
+    promptSnippet: "Request an early question or scope ResearchAction from Core",
+    promptGuidelines: ["Use only while the Project is draft. After scope approval, follow ResearchRun and use the stage-specific capability or Job tools."],
     parameters: Type.Object({ message: Type.String({ minLength: 1, maxLength: 4000 }) }, { additionalProperties: false }),
     async execute(_id, params, _signal, _update, ctx) {
       const runtime = host.runtime();

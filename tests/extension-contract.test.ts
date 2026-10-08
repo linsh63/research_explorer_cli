@@ -5,7 +5,6 @@ import { join } from "node:path";
 import test from "node:test";
 import { createResearchExplorerExtension, RESEARCH_EXPLORER_ENTRY } from "../src/extension/index.js";
 import type { CoreConnection, DoctorReport, ProjectStatus } from "../src/core/types.js";
-import { DIRECTION_FALLBACK_OPTIONS } from "../src/extension/direction-ui.js";
 import type { ExecutionMode, ResearchAction } from "../src/research/types.js";
 import { SecretInput } from "../src/extension/secret-input.js";
 
@@ -54,7 +53,7 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
   let mode = initialMode;
   const requests: any[] = [];
   const status = projectStatus();
-  const candidateAction = action(candidateType);
+  let candidateAction = action(candidateType);
   const job = { id: "job-c3", workspaceId: status.workspaceId, projectId: status.project.id, status: "succeeded", spec: {}, currentAttempt: 1, cancelRequested: false, failureClass: null, failureMessage: null, createdAt: "now", updatedAt: "now", startedAt: "now", finishedAt: "now" };
   const policy = () => ({ mode, maxAutoActionsPerTurn: mode === "auto" ? 1 : 0, maxKnownCostUsdPerAction: 0, autoAllowedActionTypes: ["question.propose", "question.select"], updatedAt: "now" });
   const client: CoreConnection = {
@@ -69,9 +68,10 @@ function fakeClient(initialMode: ExecutionMode = "manual", candidateType: Resear
         return { status: "accepted", projectId: status.project.id, data: { policy: policy() }, error: null };
       }
       if (input.type === "conversation.send") {
+        if (candidateType === "question.propose" && status.questions.some((item) => item.status === "selected")) candidateAction = action("scope.approve");
         return { status: "accepted", projectId: status.project.id, data: { sessionId: "conversation-1", reply: "Choose next action", executedAction: null, actionResult: null, candidates: { id: "set-1", workspaceId: status.workspaceId, projectId: status.project.id, sessionId: "conversation-1", status: "open", candidates: [{ id: "candidate-1", kind: "action", title: candidateAction.title, description: candidateAction.description, action: candidateAction }, { id: "candidate-free", kind: "free_input", title: "Other", description: "Free input", action: null }], freeInputAllowed: true, createdAt: "now", consumedAt: null }, policy: policy() }, error: null };
       }
-      if (input.type === "candidate.choose") return { status: "accepted", projectId: status.project.id, data: { sessionId: "conversation-1", reply: "Executed", executedAction: candidateAction, actionResult: {}, candidates: null, policy: policy() }, error: null };
+      if (input.type === "candidate.choose") { if (candidateAction.type === "question.propose" || candidateAction.type === "question.select") status.questions = [{ id: "question-1", version: 1, status: "selected", question: "Selected fixture question" }]; if (candidateAction.type === "scope.approve") status.project.status = "scoped"; return { status: "accepted", projectId: status.project.id, data: { sessionId: "conversation-1", reply: "Executed", executedAction: candidateAction, actionResult: {}, candidates: null, policy: policy() }, error: null }; }
       if (input.type === "action.execute") return { status: "accepted", projectId: status.project.id, data: { action: input.payload.action, result: {} }, error: null };
       if (input.type === "job.submit") return { status: "accepted", projectId: status.project.id, data: { job }, error: null };
       if (input.type === "job.cancel") return { status: "accepted", projectId: status.project.id, data: { job: { ...job, status: "cancelled" } }, error: null };
@@ -108,6 +108,7 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
   const flags = new Map(Object.entries(options.flags ?? {}));
   const appended: Array<{ type: string; data: any }> = [];
   const sentMessages: string[] = [];
+  const sentCustomMessages: any[] = [];
   const uiCalls: any[][] = [];
   const fake = fakeClient(options.mode, options.candidateType);
   const selections = [...(options.selections ?? [])];
@@ -123,13 +124,14 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
     appendEntry: (type: string, data: unknown) => appended.push({ type, data }),
     setSessionName: (name: string) => uiCalls.push(["session-name", name]),
     sendUserMessage: (content: string) => sentMessages.push(content),
+    sendMessage: (message: unknown) => sentCustomMessages.push(message),
   };
   createResearchExplorerExtension({ connect: async () => { if (options.connectError) throw options.connectError; return fake.client; }, diagnose: async () => doctor })(pi as any);
   const ctx = {
     mode: options.extensionMode ?? "tui",
     hasUI: (options.extensionMode ?? "tui") === "tui",
     cwd: directoryForTests(),
-    sessionManager: { getBranch: () => options.entries ?? [] },
+    sessionManager: { getBranch: () => options.entries ?? [], getSessionId: () => "session-test", getSessionName: () => "Test session" },
     model: { provider: "test", id: "direction-model" },
     modelRegistry: {
       complete: async () => ({ stopReason: "stop", content: [{ type: "text", text: JSON.stringify({ directions: [
@@ -150,13 +152,13 @@ function harness(options: { entries?: unknown[]; flags?: Record<string, boolean 
       setWidget: (...args: unknown[]) => uiCalls.push(["widget", ...args]),
     },
   };
-  return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, sentMessages, uiCalls, ctx };
+  return { ...fake, commands, tools, handlers, renderers, registeredFlags, appended, sentMessages, sentCustomMessages, uiCalls, ctx };
 }
 
 test("C5 registers Project, Job, SSH, plugin, capability commands and bounded tools", () => {
   const h = harness();
   for (const command of ["research-job-submit", "research-ssh-setup", "research-plugin-search", "research-plugin-install", "research-plugin-update", "research-fork", "research-bundle-export", "research-bundle-import", "research-dependencies", "research-mode"]) assert.ok(h.commands.has(command), command);
-  for (const command of ["doctor", "project", "status", "mode", "next", "actions"]) assert.ok(h.commands.has(command), command);
+  for (const command of ["doctor", "project", "status", "mode", "next", "actions", "run", "run-status", "pause", "continue", "stop"]) assert.ok(h.commands.has(command), command);
   assert.deepEqual([...h.tools.keys()], ["research_context", "research_events", "research_converse", "research_choose_candidate", "research_execute_action", "research_job", "research_plugins", "research_capability"]);
   assert.ok(h.renderers.has(RESEARCH_EXPLORER_ENTRY));
   for (const event of ["session_start", "input", "before_agent_start", "turn_start", "turn_end", "session_shutdown"]) assert.ok(h.handlers.has(event), event);
@@ -177,19 +179,12 @@ test("research-new binds only the Pi session and does not write a global recent 
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test("a fresh session offers the Core project archive and can remain unbound", async () => {
-  const projectChoice = "C2 Project · 确定研究问题";
-  const selected = harness({ selections: [projectChoice] });
-  await selected.handlers.get("session_start")({}, selected.ctx);
-  assert.ok(selected.requests.some((request) => request.type === "workspace.projects"));
-  assert.equal(selected.appended.filter((item) => item.type === RESEARCH_EXPLORER_ENTRY).at(-1)?.data.projectTitle, "C2 Project");
-  assert.ok(selected.uiCalls.some((call) => call[0] === "session-name" && call[1] === "C2 Project"));
-
-  const free = harness({ selections: ["自由聊天（不绑定项目）"] });
-  await free.handlers.get("session_start")({}, free.ctx);
-  assert.ok(free.appended.some((item) => item.type === "research-explorer.unbound"));
-  assert.ok(free.uiCalls.some((call) => call[0] === "widget" && call[2] === undefined));
-  assert.ok(free.uiCalls.some((call) => call[0] === "status" && call[2] === undefined));
+test("a fresh Pi session remains plain chat until a research capability is used", async () => {
+  const h = harness();
+  await h.handlers.get("session_start")({}, h.ctx);
+  assert.equal(h.requests.some((request) => request.type === "workspace.projects" || request.type === "project.create"), false);
+  assert.equal(h.appended.some((item) => item.type === RESEARCH_EXPLORER_ENTRY), false);
+  assert.ok(h.uiCalls.some((call) => call[0] === "widget" && call[2] === undefined));
 });
 
 test("Job submission persists the public Job ID in the Pi session and excludes secret fields", async () => {
@@ -232,31 +227,90 @@ test("confirmation token component masks every typed character", () => {
   assert.doesNotMatch(component.render(80).join("\n"), /confirmation-value|1234567890/);
 });
 
-test("candidate mode lets Pi answer and then presents detailed research directions", async () => {
+test("unified chat keeps normal input and /next becomes a normal Pi turn", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-candidate-"));
   try {
-    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("candidate") }], mode: "candidate", flags: { "research-state-file": join(directory, "state.json") }, selections: [DIRECTION_FALLBACK_OPTIONS[0]] });
+    const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") }], mode: "manual", flags: { "research-state-file": join(directory, "state.json") } });
     await h.handlers.get("session_start")({}, h.ctx);
     const result = await h.handlers.get("input")({ text: "Help me continue", source: "interactive" }, h.ctx);
     assert.deepEqual(result, { action: "continue" });
-    await h.handlers.get("turn_end")({ message: { role: "assistant", content: [{ type: "text", text: "先分析当前研究问题。" }] } }, h.ctx);
-    const select = h.uiCalls.find((call) => call[0] === "select");
-    for (const option of DIRECTION_FALLBACK_OPTIONS) assert.ok(select[2].includes(option));
-    assert.ok(select[2].some((option: string) => option.includes("目标：") && option.includes("下一步：") && option.includes("理由：")));
+    await h.commands.get("next").handler("先分析当前研究问题。", h.ctx);
+    assert.equal(h.sentMessages.length, 1);
+    assert.match(h.sentMessages[0], /给出三个差异明确的下一步研究方向/);
+    assert.match(h.sentMessages[0], /附加要求：先分析当前研究问题/);
+    assert.equal(h.uiCalls.some((call) => call[0] === "select" && call[1] === "选择下一步研究方向"), false);
     assert.equal(h.requests.filter((request) => request.type === "candidate.choose").length, 0);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test("switching to candidate mode immediately opens detailed directions", async () => {
-  const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") }], mode: "manual", selections: [DIRECTION_FALLBACK_OPTIONS[0]] });
+test("legacy candidate and auto requests resolve to unified chat", async () => {
+  const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("candidate") }], mode: "candidate" });
   await h.handlers.get("session_start")({}, h.ctx);
   await h.commands.get("mode").handler("candidate", h.ctx);
-  const select = h.uiCalls.find((call) => call[0] === "select" && call[1] === "选择下一步研究方向");
-  assert.ok(select);
-  assert.ok(select[2].some((option: string) => option.includes("目标：") && option.includes("下一步：")));
+  const binding = h.appended.filter((item) => item.type === RESEARCH_EXPLORER_ENTRY).at(-1)?.data;
+  assert.equal(binding.mode, "manual");
+  assert.equal(h.uiCalls.some((call) => call[0] === "select" && call[1] === "选择下一步研究方向"), false);
+  assert.ok(h.uiCalls.some((call) => call[0] === "notify" && String(call[1]).includes("停用独立 Candidate/Auto")));
+});
+
+test("/run prepares scope, reaches its gate, and /continue handles Core approval in the same flow", async () => {
+  const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") }], mode: "manual", selections: ["1. Approve scope [需要人工批准]"], confirmations: [true] });
+  await h.handlers.get("session_start")({}, h.ctx);
+  await h.commands.get("run").handler("验证统一聊天科研运行器", h.ctx);
+  assert.ok(h.appended.some((item) => item.type === "research-explorer.run" && item.data.status === "running"));
+  assert.ok(h.sentMessages.some((message) => message.includes("当前阶段：问题与范围")));
+  await h.handlers.get("turn_end")({ message: { role: "assistant", content: [{ type: "text", text: "完成问题梳理" }], usage: { cost: { total: 0.01 } }, stopReason: "stop" } }, h.ctx);
+  const gated = h.appended.filter((item) => item.type === "research-explorer.run").at(-1)?.data;
+  assert.equal(gated.status, "awaiting_approval");
+  assert.equal(gated.awaitingGate, "scope_approval");
+  await h.commands.get("continue").handler("", h.ctx);
+  const continued = h.appended.filter((item) => item.type === "research-explorer.run").at(-1)?.data;
+  assert.equal(continued.status, "running");
+  assert.equal(continued.stage, "evidence");
+  assert.ok(h.sentMessages.some((message) => message.includes("当前阶段：文献与证据")));
+});
+
+test("/run resumes a scoped Core Project at evidence and never asks conversation for a plan", async () => {
+  const h = harness({ entries: [{ type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") }] });
+  h.client.query = async (input: any) => {
+    h.requests.push(input);
+    if (input.type === "project.status") return { status: "ok", projectId: "project-c2", data: projectStatus({ status: "scoped" }), error: null };
+    if (input.type === "policy.get") return { status: "ok", projectId: "project-c2", data: h.policy(), error: null };
+    if (input.type === "project.events") return { status: "ok", projectId: "project-c2", data: { events: [], nextSequence: null }, error: null };
+    return { status: "ok", projectId: "project-c2", data: null, error: null };
+  };
+  await h.handlers.get("session_start")({}, h.ctx);
+  await h.commands.get("run").handler("继续已经批准范围的研究", h.ctx);
+  assert.ok(h.sentMessages.some((message) => message.includes("当前阶段：文献与证据")));
+  assert.equal(h.requests.some((request) => request.type === "conversation.send"), false);
+  const prompt = await h.handlers.get("before_agent_start")({ systemPrompt: "base" }, h.ctx);
+  assert.match(prompt.systemPrompt, /Never call research_converse to discover a general next step/);
+});
+
+test("/run replaces a previously blocked run and reuses its goal", async () => {
+  const blocked = { ...createRunFixture(), status: "blocked", blocker: "旧版误把 Core 空动作当成阻塞" };
+  const h = harness({ entries: [
+    { type: "custom", customType: RESEARCH_EXPLORER_ENTRY, data: savedContext("manual") },
+    { type: "custom", customType: "research-explorer.run", data: blocked },
+  ] });
+  await h.handlers.get("session_start")({}, h.ctx);
+  await h.commands.get("run").handler("", h.ctx);
+  const restarted = h.appended.filter((item) => item.type === "research-explorer.run").at(-1)?.data;
+  assert.equal(restarted.status, "running");
+  assert.equal(restarted.goal, blocked.goal);
+  assert.notEqual(restarted.runId, blocked.runId);
+  assert.ok(h.sentCustomMessages.some((message) => String(message.content).includes("重新规划")));
 });
 
 function directoryForTests(): string { return process.cwd(); }
+
+function createRunFixture() {
+  return {
+    schemaVersion: 1, runId: "run-old", sessionId: "session-test", projectId: "project-c2", goal: "继续旧自动科研目标",
+    status: "running", stageIndex: 0, stage: "scope", awaitingGate: null, completedStages: [], modelTurns: 1,
+    knownCostUsd: 0, maxModelTurns: 20, maxKnownCostUsd: 5, blocker: null, startedAt: "earlier", updatedAt: "earlier",
+  };
+}
 
 test("manual mode preserves native Pi chat", async () => {
   const directory = mkdtempSync(join(tmpdir(), "rexplore-c2-manual-"));

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "stage": "C5",
   "status": "pass",
-  "releaseVersion": "0.2.0",
+  "releaseVersion": "0.3.0",
   "platform": "linux/x64",
   "endToEnd": {
     "projectCreated": true,
@@ -23,13 +23,13 @@
     "nativeChatAndAuthInherited": true
   },
   "package": {
-    "filename": "research-explorer-cli-0.2.0.tgz",
-    "sha256": "d73507688084282d62e8328cd11bfb0918b6c45b997302227e3c6b64c1adb3ea",
-    "entries": 92,
+    "filename": "research-explorer-cli-0.3.0.tgz",
+    "sha256": "d7d1c92e6b98c9e8c03b8b36b144ba48ebb8c930a4cdb628cdf92d0ee501e336",
+    "entries": 96,
     "packageOnly": true,
     "licenseComplete": true,
-    "upgradeFrom": "0.1.2",
-    "rollbackTo": "0.1.2"
+    "upgradeFrom": "0.2.0",
+    "rollbackTo": "0.2.0"
   },
   "security": {
     "secretScan": true,
@@ -37,14 +37,14 @@
     "confirmationTokenExcluded": true
   },
   "docs": {
-    "checkedFiles": 18,
+    "checkedFiles": 20,
     "missingLinks": 0
   },
   "publishing": {
     "gitTagCreated": false,
     "githubReleaseCreated": false,
-    "npmPublished": true
+    "npmPublished": false
   },
-  "elapsedMs": 24526,
-  "recordedAt": "2026-10-06T04:23:11.878Z"
+  "elapsedMs": 30585,
+  "recordedAt": "2026-10-08T06:14:38.674Z"
 }

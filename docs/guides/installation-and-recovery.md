@@ -96,7 +96,7 @@ Enabling a permission only allows the service to evaluate corresponding commands
 
 ## Rollback
 
-Research Explorer `0.2.0` reads existing session-bound Project entries from `0.1.x`. It stops reading and writing the global recent-Project fallback, so new chats no longer inherit an unrelated Project. Rolling back to `0.1.2` restores the old startup behavior.
+Research Explorer `0.3.0` reads existing session-bound Project entries from `0.2.0`, migrates legacy modes to unified chat, and preserves Core Project and Job data. Rolling back to `0.2.0` restores the previous Candidate/Auto interaction model.
 
 CLI rollback does not downgrade a Core database. If Core was upgraded and migrated, stop Core and restore its pre-upgrade backup before running an older Core version.
 

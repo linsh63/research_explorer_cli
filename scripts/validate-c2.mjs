@@ -90,7 +90,7 @@ try {
   await rpc.request("prompt", { message: "/actions Execute one bounded action" });
   const entries = await rpc.request("get_entries");
   const binding = latestBinding(entries.data?.entries);
-  assert.equal(binding?.mode, "auto");
+  assert.equal(binding?.mode, "manual");
   assert.ok(binding?.conversationSessionId);
   const interactiveStatus = await new ResearchRuntime(client, workspaceId, binding.projectId).status();
   assert.equal(interactiveStatus.questions.length, 1);
@@ -106,7 +106,7 @@ try {
     status: "pass",
     platform: `${process.platform}/${process.arch}`,
     entryEquivalence: { direct: "question.proposed", candidate: "question.proposed", auto: "question.proposed", semanticActionEqual: true },
-    candidateUi: { detailedDirectionsAfterAnswer: true, immediateOnModeEntry: true, fixedFallbacks: ["自由聊天（返回输入框）", "输入自己的方向", "重新生成候选", "取消"], coreActionsSeparate: true },
+    candidateUi: { independentModesRetired: true, onDemandDirections: true, directionsPersistedInPiSession: true, fixedFallbacks: ["自由聊天（返回输入框）", "重新生成候选"], coreActionsSeparate: true },
     gates: { autoScopeApprovalBlocked: true, agentScopeApprovalRejected: true, explicitUserApprovalAccepted: true },
     persistence: { mode: binding.mode, conversationSessionId: true, tokenExcluded: true },
     commands: commands.filter((name) => name.startsWith("research-")),
@@ -168,10 +168,7 @@ function semantic(action) {
 function uiResponder() {
   return (message) => {
     if (message.method === "confirm") return { confirmed: true };
-    if (message.method === "select") {
-      const freeChat = message.options?.find((item) => item === "继续用原输入自由聊天");
-      return freeChat ? { value: freeChat } : { value: message.options?.[0] };
-    }
+    if (message.method === "select") return { value: message.options?.[0] };
     if (message.method === "input") return { cancelled: true };
     return null;
   };

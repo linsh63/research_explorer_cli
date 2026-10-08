@@ -10,13 +10,12 @@
     "semanticActionEqual": true
   },
   "candidateUi": {
-    "detailedDirectionsAfterAnswer": true,
-    "immediateOnModeEntry": true,
+    "independentModesRetired": true,
+    "onDemandDirections": true,
+    "directionsPersistedInPiSession": true,
     "fixedFallbacks": [
       "自由聊天（返回输入框）",
-      "输入自己的方向",
-      "重新生成候选",
-      "取消"
+      "重新生成候选"
     ],
     "coreActionsSeparate": true
   },
@@ -26,7 +25,7 @@
     "explicitUserApprovalAccepted": true
   },
   "persistence": {
-    "mode": "auto",
+    "mode": "manual",
     "conversationSessionId": true,
     "tokenExcluded": true
   },
@@ -67,6 +66,6 @@
     "realPiRpc": true,
     "noModelCall": true
   },
-  "elapsedMs": 1279,
-  "recordedAt": "2026-10-06T04:21:23.038Z"
+  "elapsedMs": 8291,
+  "recordedAt": "2026-10-08T06:13:08.411Z"
 }

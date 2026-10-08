@@ -4,8 +4,6 @@ import type { ResearchRuntime } from "../research/runtime.js";
 import type { ConversationOutcome, ResearchCandidate } from "../research/types.js";
 
 const FREE_CHAT = "继续用原输入自由聊天";
-const OTHER = "输入其他行动";
-const CANCEL = "取消";
 
 export async function runCandidateInteraction(options: {
   runtime: ResearchRuntime;
@@ -35,30 +33,24 @@ export async function runCandidateInteraction(options: {
     }
     const actions = set.candidates.filter((candidate): candidate is ResearchCandidate & { action: NonNullable<ResearchCandidate["action"]> } => candidate.kind === "action" && candidate.action !== null);
     const labels = actions.map((candidate, index) => `${index + 1}. ${candidate.title}${candidate.action.requiresHumanApproval ? " [需要人工批准]" : ""}`);
-    const choice = await options.ctx.ui.select(outcome.reply, [...labels, FREE_CHAT, OTHER, CANCEL]);
-    if (!choice || choice === CANCEL) return "handled";
+    const choice = await options.ctx.ui.select(outcome.reply, [...labels, FREE_CHAT]);
+    if (!choice) return "handled";
     if (choice === FREE_CHAT) return "continue";
     try {
-      if (choice === OTHER) {
-        const freeInput = (await options.ctx.ui.input("其他研究行动", "说明你希望 Core 考虑的下一步"))?.trim();
-        if (!freeInput) return "handled";
-        outcome = await options.runtime.chooseFreeInput({ sessionId: outcome.sessionId, candidateSetId: set.id, freeInput }, "user");
-      } else {
-        const index = labels.indexOf(choice);
-        const candidate = index >= 0 ? actions[index] : undefined;
-        if (!candidate) {
-          options.ctx.ui.notify("Candidate selection is no longer valid.", "error");
-          return "handled";
-        }
-        if (candidate.action.requiresHumanApproval || candidate.action.type === "scope.approve") {
-          const approved = await options.ctx.ui.confirm(
-            "批准科研范围？",
-            `${candidate.title}\n\n${candidate.description}\n\n这会在 Core 中记录不可自动跨越的人工批准。`,
-          );
-          if (!approved) return "handled";
-        }
-        outcome = await options.runtime.chooseCandidate({ sessionId: outcome.sessionId, candidateSetId: set.id, candidateId: candidate.id }, "user");
+      const index = labels.indexOf(choice);
+      const candidate = index >= 0 ? actions[index] : undefined;
+      if (!candidate) {
+        options.ctx.ui.notify("Candidate selection is no longer valid.", "error");
+        return "handled";
       }
+      if (candidate.action.requiresHumanApproval || candidate.action.type === "scope.approve") {
+        const approved = await options.ctx.ui.confirm(
+          "批准科研范围？",
+          `${candidate.title}\n\n${candidate.description}\n\n这会在 Core 中记录不可自动跨越的人工批准。`,
+        );
+        if (!approved) return "handled";
+      }
+      outcome = await options.runtime.chooseCandidate({ sessionId: outcome.sessionId, candidateSetId: set.id, candidateId: candidate.id }, "user");
       await options.onOutcome(outcome);
     } catch (error) {
       options.ctx.ui.notify(`Candidate action failed: ${safeError(error)}`, "error");
@@ -69,4 +61,4 @@ export async function runCandidateInteraction(options: {
   return "handled";
 }
 
-export const CANDIDATE_FALLBACK_OPTIONS = [FREE_CHAT, OTHER, CANCEL] as const;
+export const CANDIDATE_FALLBACK_OPTIONS = [FREE_CHAT] as const;

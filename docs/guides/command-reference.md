@@ -4,7 +4,7 @@
 
 - `/project` — choose an existing Project, create one, or return to unbound free chat
 - `/status`
-- `/mode manual|candidate|auto`
+- `/mode` — show or restore the unified chat mode; legacy Candidate/Auto requests are mapped back to unified chat
 - `/next [instruction]` — generate detailed candidate directions
 - `/actions [instruction]` — show Core-legal state transitions
 - `/report [path]`
@@ -19,7 +19,7 @@ Long `research-*` spellings remain compatible during the transition:
 - `/research-fork <branch> <reason>`
 - `/research-report <path>`
 
-Interactive startup opens Pi's session selector. A new session then opens the Research Explorer Project picker. Manual mode has no persistent research widget; candidate mode generates direction choices immediately and after each completed assistant answer.
+Interactive startup opens Pi's session selector. A new session then opens the Research Explorer Project picker. Unified chat has no persistent research widget. `/next` explicitly generates direction choices and writes the generated candidates and chosen direction into the Pi session history.
 
 ## Scientific capabilities
 

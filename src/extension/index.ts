@@ -1,19 +1,19 @@
 import { randomUUID } from "node:crypto";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Box, Text } from "@earendil-works/pi-tui";
 import { connectLocalCore, diagnoseCore, safeError } from "../core/client.js";
 import { registerCoreFlags, resolveCoreConfig } from "../core/config.js";
-import type { CoreConfig, CoreConnection, DoctorReport, ProjectStatus, WorkspaceProjects } from "../core/types.js";
+import type { CoreConfig, CoreConnection, DoctorReport, ProjectStatus } from "../core/types.js";
 import { PUBLIC_SCHEMA_VERSION } from "../core/types.js";
 import { ResearchRuntime } from "../research/runtime.js";
 import type { ConversationOutcome, ExecutionMode } from "../research/types.js";
 import { runCandidateInteraction } from "./candidate-ui.js";
-import { assistantText, showResearchDirections } from "./direction-ui.js";
 import { JobRuntime, type JobReadModel } from "../research/jobs.js";
 import { SshRuntime } from "../research/ssh.js";
 import { PluginRuntime } from "../research/plugins.js";
 import { ProjectRuntime } from "../research/projects.js";
 import { CapabilityRuntime } from "../research/capabilities.js";
+import { alignRunToProjectStatus, approveRunGate, createResearchRun, gateLabel, RESEARCH_RUN_ENTRY, recordRunTurn, restoreResearchRun, runPrompt, runSummary, type ResearchRunState } from "../research/run.js";
 import { registerJobFeatures } from "./job-commands.js";
 import { JobMonitor, type MonitoredJob } from "./job-monitor.js";
 import { registerSshCommands } from "./ssh-commands.js";
@@ -51,6 +51,8 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     let contextVerified = false;
     let connectionError: string | null = null;
     let snapshot: ProjectStatus | null = null;
+    let activeRun: ResearchRunState | null = null;
+    let startupShown = false;
     let sessionContext: ExtensionContext | null = null;
     let monitoredJobs: MonitoredJob[] = [];
     const jobMonitor = new JobMonitor((jobs) => {
@@ -117,7 +119,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     });
 
     pi.registerCommand("research-mode", {
-      description: "Set research interaction mode: /research-mode manual|candidate|auto",
+      description: "Legacy mode command; the preview uses one unified chat mode",
       handler: modeCommand,
     });
 
@@ -129,9 +131,31 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     pi.registerCommand("doctor", { description: "检查 Research Explorer 连接", handler: doctorCommand });
     pi.registerCommand("project", { description: "选择或新建科研项目", handler: projectCommand });
     pi.registerCommand("status", { description: "查看当前科研项目状态", handler: statusCommand });
-    pi.registerCommand("mode", { description: "切换 manual、candidate 或 auto 模式", handler: modeCommand });
+    pi.registerCommand("mode", { description: "查看或恢复统一聊天模式", handler: modeCommand });
     pi.registerCommand("next", { description: "生成详细的下一步研究候选", handler: directionCommand });
     pi.registerCommand("actions", { description: "查看 Core 当前允许的流程动作", handler: legalActionsCommand });
+    pi.registerCommand("run", { description: "启动或查看自动科研任务：/run [研究目标]", handler: runCommand });
+    pi.registerCommand("run-status", { description: "查看自动科研任务进度", handler: runStatusCommand });
+    pi.registerCommand("pause", { description: "暂停自动科研任务", handler: pauseRunCommand });
+    pi.registerCommand("continue", { description: "继续自动科研任务或批准当前门禁", handler: continueRunCommand });
+    pi.registerCommand("stop", { description: "终止自动科研任务并保留结果", handler: stopRunCommand });
+    pi.registerCommand("rexplore-startup", { description: "打开 Research Explorer 原生会话选择器", handler: startupCommand });
+
+    async function startupCommand(_args: string, ctx: ExtensionCommandContext): Promise<void> {
+      let sessions;
+      try {
+        const { SessionManager } = await import("@earendil-works/pi-coding-agent");
+        sessions = (await SessionManager.listAll()).sort((a, b) => b.modified.getTime() - a.modified.getTime()).filter(item => item.path !== ctx.sessionManager.getSessionFile()).slice(0, 12);
+      }
+      catch (error) { ctx.ui.notify(`读取会话历史失败：${safeError(error)}`, "error"); return; }
+      const create = "新建会话 · 开始新的聊天与科研存档";
+      const labels = sessions.map(item => `${compactLabel(item.name || item.firstMessage || "未命名会话", 42)} · ${compactLabel(item.cwd || "未知目录", 28)} · ${formatSessionTime(item.modified)}`);
+      const selected = await ctx.ui.select("Research Explorer", [create, ...labels]);
+      if (!selected) return;
+      if (selected === create) { await ctx.newSession(); return; }
+      const index = labels.indexOf(selected), session = index >= 0 ? sessions[index] : undefined;
+      if (session) await ctx.switchSession(session.path);
+    }
 
     async function doctorCommand(_args: string, ctx: ExtensionContext): Promise<void> {
       const report = await dependencies.diagnose(config);
@@ -184,20 +208,26 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
 
     async function openProjectCommand(args: string, ctx: ExtensionContext): Promise<void> {
       const projectId = args.trim();
-      if (!projectId) return chooseProject(ctx);
+      if (!projectId) return ctx.ui.notify("旧 `/research-open` 仅用于迁移，请提供内部 Project ID。新会话无需选择第二层 Project。", "info");
       await openProject(projectId, ctx);
       if (context) pi.setSessionName(context.projectTitle);
     }
 
-    async function projectCommand(_args: string, ctx: ExtensionContext): Promise<void> { await chooseProject(ctx); }
+    async function projectCommand(_args: string, ctx: ExtensionContext): Promise<void> {
+      const runtime = await requireRuntime(ctx);
+      if (!runtime || !context) return;
+      ctx.ui.notify(`${context.projectTitle} · ${stageLabel(context.projectStatus)}\n科研状态与当前 Pi 会话绑定。`, "info");
+    }
 
     async function statusCommand(_args: string, ctx: ExtensionContext): Promise<void> {
       if (!context) return ctx.ui.notify("当前是自由聊天，尚未绑定科研项目。使用 /project 选择或新建项目。", "info");
       const current = context, activeClient = await requireClient(ctx);
       if (!activeClient) return;
       try {
-        const [status, policy] = await Promise.all([queryProject(activeClient, current.workspaceId, current.projectId), new ResearchRuntime(activeClient, current.workspaceId, current.projectId).policy()]);
+        const runtime = new ResearchRuntime(activeClient, current.workspaceId, current.projectId);
+        const [status, currentPolicy] = await Promise.all([queryProject(activeClient, current.workspaceId, current.projectId), runtime.policy()]);
         if (!status) return ctx.ui.notify("当前项目不可用。", "error");
+        const policy = currentPolicy.mode === "manual" ? currentPolicy : await runtime.setMode("manual");
         bind(status, ctx, policy.mode, current.conversationSessionId);
         ctx.ui.notify(formatStatus(status), "info");
       } catch (error) {
@@ -206,23 +236,27 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     }
 
     async function modeCommand(args: string, ctx: ExtensionContext): Promise<void> {
-      let mode = parseMode(args);
-      if (!mode) mode = parseMode((await ctx.ui.select("交互模式", ["manual · 自由聊天", "candidate · 候选方向", "auto · 有限自动"]))?.split(" ")[0] ?? "");
-      if (!mode) return;
+      const requested = parseMode(args);
+      if (requested && requested !== "manual") ctx.ui.notify("本地预览版已停用独立 Candidate/Auto 模式。统一聊天中使用 /next 获取建议，使用 /actions 执行 Core 流程动作。", "info");
+      const mode: ExecutionMode = "manual";
       const runtime = await requireRuntime(ctx);
       if (!runtime) return;
-      if (mode === "auto" && !(await ctx.ui.confirm("开启有限自动模式？", "Core 每轮最多自动执行一个零成本、无额外权限的动作；人工门禁仍会暂停。"))) return;
       try {
         const policy = await runtime.setMode(mode);
         if (context) { context = { ...context, mode: policy.mode, recordedAt: new Date().toISOString() }; persistContext(ctx); }
-        ctx.ui.notify(policy.mode === "candidate" ? "已切换为候选模式；每次回答后会额外调用当前模型生成研究方向。" : `已切换为${modeLabel(policy.mode)}。`, "info");
-        if (policy.mode === "candidate" && snapshot) await showResearchDirections({ pi, ctx, status: snapshot, basis: "用户刚进入候选模式，请给出适合当前项目阶段的下一步方向。" });
+        ctx.ui.notify("当前使用统一聊天模式。需要研究建议时输入 /next。", "info");
       } catch (error) { ctx.ui.notify(`模式切换失败：${safeError(error)}`, "error"); }
     }
 
     async function directionCommand(args: string, ctx: ExtensionContext): Promise<void> {
-      if (!context || !snapshot) return ctx.ui.notify("请先使用 /project 选择科研项目。", "warning");
-      await showResearchDirections({ pi, ctx, status: snapshot, basis: args.trim() || "请根据当前项目阶段给出下一步研究方向。" });
+      const runtime = await requireRuntime(ctx);
+      if (!runtime || !context) return;
+      pi.sendUserMessage([
+        "请根据当前聊天与科研状态给出三个差异明确的下一步研究方向。",
+        "每项说明：目标、具体下一步、理由、预计成本和主要风险。",
+        "不要执行任何方向，等待我用编号、组合方案或自由文字回复。",
+        args.trim() ? `附加要求：${args.trim()}` : "",
+      ].filter(Boolean).join("\n"), { deliverAs: "followUp" });
     }
 
     async function legalActionsCommand(args: string, ctx: ExtensionContext): Promise<void> {
@@ -231,35 +265,133 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       await runCandidateInteraction({ runtime, message: args.trim() || "给出当前项目的下一步合法流程动作。", sessionId: context?.conversationSessionId ?? null, ctx, onOutcome: (outcome) => applyOutcome(outcome, ctx) });
     }
 
-    async function chooseProject(ctx: ExtensionContext): Promise<void> {
-      const activeClient = await requireClient(ctx);
-      if (!activeClient) return;
-      let data: WorkspaceProjects;
-      try { data = await queryProjects(activeClient, config.workspaceId); }
-      catch (error) { return ctx.ui.notify(`读取项目列表失败：${safeError(error)}`, "error"); }
-      const labels = data.projects.map((item) => `${item.title} · ${stageLabel(item.status)}${item.branchName === "main" ? "" : ` · ${item.branchName}`}`);
-      const free = "自由聊天（不绑定项目）", create = "新建科研项目";
-      const selected = await ctx.ui.select("选择科研项目", [create, ...labels, free]);
-      if (!selected) return;
-      if (selected === free) { unbind(ctx); return; }
-      if (selected === create) return createProjectCommand("", ctx);
-      const index = labels.indexOf(selected), project = index >= 0 ? data.projects[index] : undefined;
-      if (!project) return;
-      await openProject(project.id, ctx);
-      if (context) pi.setSessionName(context.projectTitle);
+    async function runCommand(args: string, ctx: ExtensionContext): Promise<void> {
+      if (activeRun && !["completed", "cancelled", "blocked"].includes(activeRun.status)) {
+        ctx.ui.notify(runSummary(activeRun), "info");
+        return;
+      }
+      const runtime = await requireRuntime(ctx);
+      if (!runtime || !context) return;
+      const previousBlockedGoal = activeRun?.status === "blocked" ? activeRun.goal : "";
+      const goal = args.trim() || previousBlockedGoal || (await ctx.ui.input("自动科研目标", "说明要研究的问题或目标"))?.trim() || "";
+      if (goal.length < 5) return ctx.ui.notify("自动科研目标至少需要 5 个字符。", "warning");
+      activeRun = createResearchRun({ sessionId: ctx.sessionManager.getSessionId(), projectId: context.projectId, goal });
+      const status = await runtime.status();
+      activeRun = alignRunToProjectStatus(activeRun, status.project.status);
+      if (activeRun.stage === "scope") {
+        try { await prepareScopeForGate(ctx); }
+        catch (error) {
+          activeRun = { ...activeRun, status: "blocked", blocker: `无法准备研究问题：${safeError(error)}`, updatedAt: new Date().toISOString() };
+          persistRun("自动科研无法建立首个研究问题。", ctx);
+          return;
+        }
+      }
+      persistRun(previousBlockedGoal ? "已从阻塞检查点重新规划自动科研任务。" : "自动科研任务已启动。", ctx);
+      if (activeRun.status === "running") sendRunStage();
+    }
+
+    async function runStatusCommand(_args: string, ctx: ExtensionContext): Promise<void> {
+      if (!activeRun) return ctx.ui.notify("当前会话没有自动科研任务。使用 /run [目标] 启动。", "info");
+      ctx.ui.notify(runSummary(activeRun), activeRun.status === "blocked" ? "warning" : "info");
+    }
+
+    async function pauseRunCommand(_args: string, ctx: ExtensionContext): Promise<void> {
+      if (!activeRun || activeRun.status !== "running") return ctx.ui.notify("当前没有正在运行的自动科研任务。", "info");
+      activeRun = { ...activeRun, status: "paused", updatedAt: new Date().toISOString() };
+      persistRun("自动科研将在当前模型步骤结束后暂停。", ctx);
+    }
+
+    async function continueRunCommand(_args: string, ctx: ExtensionContext): Promise<void> {
+      if (!activeRun) return ctx.ui.notify("当前会话没有自动科研任务。", "info");
+      if (activeRun.status === "awaiting_approval") {
+        if (activeRun.awaitingGate === "scope_approval") {
+          const runtime = await requireRuntime(ctx);
+          if (!runtime) return;
+          let status = await runtime.status();
+          if (status.project.status === "draft") {
+            await runCandidateInteraction({ runtime, message: "批准当前已选择研究问题的范围。", sessionId: context?.conversationSessionId ?? null, ctx, onOutcome: (outcome) => applyOutcome(outcome, ctx) });
+            status = await runtime.status();
+          }
+          if (status.project.status === "draft") return ctx.ui.notify("研究范围尚未批准，自动科研仍停在范围门禁。", "warning");
+        } else if (!(await ctx.ui.confirm(`批准：${gateLabel(activeRun.awaitingGate!)}`, "批准后自动科研将进入下一阶段。该决定会写入当前会话历史。"))) return;
+        activeRun = approveRunGate(activeRun);
+        persistRun(`已批准${activeRun.status === "completed" ? "最终结论，任务完成" : "门禁，继续自动科研"}。`, ctx);
+        if (activeRun.status === "running") sendRunStage();
+        return;
+      }
+      if (activeRun.status === "paused") {
+        activeRun = { ...activeRun, status: "running", blocker: null, updatedAt: new Date().toISOString() };
+        persistRun("自动科研已继续。", ctx);
+        sendRunStage();
+        return;
+      }
+      if (activeRun.status === "blocked") return ctx.ui.notify(`${runSummary(activeRun)}\n请解决阻塞条件后重新启动任务。`, "warning");
+      ctx.ui.notify(runSummary(activeRun), "info");
+    }
+
+    async function stopRunCommand(_args: string, ctx: ExtensionContext): Promise<void> {
+      if (!activeRun || ["completed", "cancelled"].includes(activeRun.status)) return ctx.ui.notify("当前没有可终止的自动科研任务。", "info");
+      if (!(await ctx.ui.confirm("终止自动科研？", "已有聊天、Core 状态、Job 和 Artifact 会保留。"))) return;
+      activeRun = { ...activeRun, status: "cancelled", updatedAt: new Date().toISOString() };
+      persistRun("自动科研任务已终止，已有结果已保留。", ctx);
+    }
+
+    function persistRun(message: string, ctx: ExtensionContext): void {
+      if (!activeRun) return;
+      pi.appendEntry(RESEARCH_RUN_ENTRY, activeRun);
+      pi.sendMessage({ customType: "research-explorer.run-status", content: `${message}\n\n${runSummary(activeRun)}`, display: true, details: activeRun });
+      updateRunUi(ctx);
+    }
+
+    function sendRunStage(): void {
+      if (!activeRun || activeRun.status !== "running") return;
+      pi.sendUserMessage(runPrompt(activeRun), { deliverAs: "followUp" });
+    }
+
+    async function advanceRunAfterTurn(event: unknown, ctx: ExtensionContext): Promise<void> {
+      if (!activeRun || activeRun.status !== "running") return;
+      const message = event as { usage?: { cost?: { total?: number } }; stopReason?: string; errorMessage?: string };
+      if (message.stopReason === "error") {
+        activeRun = { ...activeRun, status: "blocked", blocker: message.errorMessage || "模型步骤失败", updatedAt: new Date().toISOString() };
+        persistRun("自动科研因模型错误阻塞。", ctx);
+        return;
+      }
+      activeRun = recordRunTurn(activeRun, Number(message.usage?.cost?.total ?? 0));
+      const notice = activeRun.status === "awaiting_approval" ? `自动科研已到达人工门禁：${gateLabel(activeRun.awaitingGate!)}` : activeRun.status === "blocked" ? "自动科研已触发预算或阻塞门。" : activeRun.status === "completed" ? "自动科研任务已完成。" : "阶段完成，自动进入下一阶段。";
+      persistRun(notice, ctx);
+      if (activeRun.status === "running") sendRunStage();
+    }
+
+    async function prepareScopeForGate(ctx: ExtensionContext): Promise<void> {
+      let runtime = activeRuntime();
+      if (!runtime || !context) throw new Error("科研状态尚未建立");
+      for (let step = 0; step < 3; step += 1) {
+        const status = await runtime.status();
+        if (status.questions.some((question) => question.status === "selected")) return;
+        let outcome = await runtime.converse("自动科研正在准备研究范围，只执行零成本的问题提出或选择动作。", context.conversationSessionId, "agent");
+        const candidate = outcome.candidates?.candidates.find((item) => item.kind === "action" && item.action && (item.action.type === "question.propose" || item.action.type === "question.select"));
+        if (!candidate?.action || !outcome.candidates) throw new Error("Core 没有提供可自动执行的问题动作");
+        outcome = await runtime.chooseCandidate({ sessionId: outcome.sessionId, candidateSetId: outcome.candidates.id, candidateId: candidate.id }, "agent");
+        await applyOutcome(outcome, ctx);
+        runtime = activeRuntime();
+        if (!runtime) throw new Error("执行问题动作后科研状态丢失");
+      }
+      throw new Error("问题提出与选择未在有界步骤内完成");
     }
 
     pi.on("session_start", async (_event, ctx) => {
       sessionContext = ctx;
       config = resolveCoreConfig(pi);
       context = restoreContext(ctx.sessionManager.getBranch());
+      activeRun = restoreResearchRun(ctx.sessionManager.getBranch());
       contextVerified = false;
       try {
         client = await dependencies.connect(config);
         connectionError = null;
         if (context) {
           const runtime = new ResearchRuntime(client, context.workspaceId, context.projectId);
-          const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
+          const [status, currentPolicy] = await Promise.all([runtime.status(), runtime.policy()]);
+          const policy = currentPolicy.mode === "manual" ? currentPolicy : await runtime.setMode("manual");
           if (status) {
             snapshot = status;
             context = contextFromStatus(status, policy.mode, context.conversationSessionId, context.jobIds, context.activeJobId);
@@ -275,23 +407,16 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         await jobMonitor.restore(new JobRuntime(client, context.workspaceId, context.projectId), context.jobIds);
       }
       updateUi(ctx);
-      if (client && !context && ctx.mode === "tui" && ctx.hasUI) await chooseProject(ctx);
+      if (activeRun?.status === "running") sendRunStage();
+      if (!startupShown && process.env.RESEARCH_EXPLORER_SHOW_STARTUP === "1" && ctx.mode === "tui" && ctx.hasUI) {
+        startupShown = true;
+        process.env.RESEARCH_EXPLORER_SHOW_STARTUP = "0";
+        queueMicrotask(() => pi.sendUserMessage("/rexplore-startup", { expandPromptTemplates: true }));
+      }
     });
 
-    pi.on("input", async (event, ctx) => {
-      if (event.source === "extension" || event.streamingBehavior || context?.mode !== "auto" || !context) {
-        return { action: "continue" as const };
-      }
-      const runtime = await requireRuntime(ctx);
-      if (!runtime) return { action: "continue" as const };
-      const result = await runCandidateInteraction({
-        runtime,
-        message: event.text,
-        sessionId: context.conversationSessionId,
-        ctx,
-        onOutcome: (outcome) => applyOutcome(outcome, ctx),
-      });
-      return result === "handled" ? { action: "handled" as const } : { action: "continue" as const };
+    pi.on("input", async () => {
+      return { action: "continue" as const };
     });
 
     pi.on("before_agent_start", async (event) => {
@@ -307,18 +432,16 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         : context
           ? `Research Explorer C5 restored an unverified Project binding for ${context.projectId}, but current Core state is unavailable. Do not rely on its saved title, status or Job state and do not claim that research state was read or changed.`
           : `Research Explorer C5 has no active Project${connectionError ? " and Core is unavailable" : ""}. Do not claim that research state was read or changed.`;
-      return { systemPrompt: `${event.systemPrompt}\n\n${researchContext}` };
+      const runContext = activeRun && !["completed", "cancelled"].includes(activeRun.status)
+        ? `An active ResearchRun is authoritative for workflow planning: stage=${activeRun.stage}, status=${activeRun.status}, goal=${activeRun.goal}. Follow its stage prompt. Never call research_converse to discover a general next step; that tool only supports question proposal, question selection, and scope approval. A Core reply saying there is no automatically advanceable action is not a workflow blocker. Use research_context, research_capability, research_job, and other relevant tools to perform the current stage.`
+        : "";
+      return { systemPrompt: `${event.systemPrompt}\n\n${researchContext}${runContext ? `\n\n${runContext}` : ""}` };
     });
 
-    pi.on("turn_start", async (_event, ctx) => {
-      if (context?.mode !== "manual") ctx.ui.setStatus("research-explorer", "正在处理…");
-    });
-    pi.on("turn_end", async (event, ctx) => {
+    pi.on("turn_start", async () => {});
+    pi.on("turn_end", async (_event, ctx) => {
       updateUi(ctx);
-      if (context?.mode === "candidate" && snapshot && ctx.mode === "tui" && ctx.hasUI) {
-        const text = assistantText(event.message);
-        if (text) await showResearchDirections({ pi, ctx, status: snapshot, basis: text });
-      }
+      await advanceRunAfterTurn(_event.message, ctx);
     });
     pi.on("session_shutdown", async (_event, ctx) => {
       jobMonitor.shutdown();
@@ -327,6 +450,7 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
       ctx.ui.setWidget("research-explorer", undefined);
       ctx.ui.setStatus("research-jobs", undefined);
       ctx.ui.setWidget("research-jobs", undefined);
+      ctx.ui.setStatus("research-run", undefined);
     });
 
     async function requireClient(ctx: ExtensionContext): Promise<CoreConnection | null> {
@@ -350,8 +474,8 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
 
     async function requireRuntime(ctx: ExtensionContext): Promise<ResearchRuntime | null> {
       if (!context) {
-        ctx.ui.notify("No Project is selected. Use /research-new or /research-open <project-id>.", "warning");
-        return null;
+        await createProjectCommand(inferSessionTitle(ctx), ctx);
+        if (!context) return null;
       }
       const activeClient = await requireClient(ctx);
       if (!activeClient) return null;
@@ -406,11 +530,13 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     async function openProject(projectId: string, ctx: ExtensionContext): Promise<void> {
       const activeClient = await requireClient(ctx);
       if (!activeClient) return;
-      const [status, policy] = await Promise.all([
+      const runtime = new ResearchRuntime(activeClient, config.workspaceId, projectId);
+      const [status, currentPolicy] = await Promise.all([
         queryProject(activeClient, config.workspaceId, projectId),
-        new ResearchRuntime(activeClient, config.workspaceId, projectId).policy(),
+        runtime.policy(),
       ]);
       if (!status) throw new Error(`Project ${projectId} is unavailable in ${config.workspaceId}`);
+      const policy = currentPolicy.mode === "manual" ? currentPolicy : await runtime.setMode("manual");
       bind(status, ctx, policy.mode, null, [], null);
     }
 
@@ -441,9 +567,10 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
     async function applyOutcome(outcome: ConversationOutcome | null, ctx: ExtensionContext): Promise<void> {
       const runtime = activeRuntime();
       if (!runtime || !context) return;
-      const [status, policy] = await Promise.all([runtime.status(), runtime.policy()]);
+      const [status, currentPolicy] = await Promise.all([runtime.status(), runtime.policy()]);
+      const policy = currentPolicy.mode === "manual" ? currentPolicy : await runtime.setMode("manual");
       snapshot = status;
-      context = contextFromStatus(status, outcome?.policy.mode ?? policy.mode, outcome?.sessionId ?? context.conversationSessionId, context.jobIds, context.activeJobId);
+      context = contextFromStatus(status, policy.mode, outcome?.sessionId ?? context.conversationSessionId, context.jobIds, context.activeJobId);
       contextVerified = true;
       persistContext(ctx);
     }
@@ -479,11 +606,22 @@ export function createResearchExplorerExtension(overrides: Partial<ExtensionDepe
         ctx.ui.setStatus("research-explorer", undefined);
         ctx.ui.setWidget("research-explorer", undefined);
         updateJobUi(ctx);
+        updateRunUi(ctx);
         return;
       }
       ctx.ui.setStatus("research-explorer", contextVerified ? `${modeLabel(context.mode)} · ${stageLabel(context.projectStatus)}` : "项目状态待验证");
       ctx.ui.setWidget("research-explorer", [contextVerified ? context.projectTitle : "项目状态待验证", contextVerified ? `${stageLabel(context.projectStatus)} · ${modeLabel(context.mode)}` : connected ? "正在重新连接项目" : "Core 不可用"]);
       updateJobUi(ctx);
+      updateRunUi(ctx);
+    }
+
+    function updateRunUi(ctx: ExtensionContext): void {
+      if (!activeRun || ["completed", "cancelled"].includes(activeRun.status)) {
+        ctx.ui.setStatus("research-run", undefined);
+        return;
+      }
+      const summary = runSummary(activeRun).split("\n");
+      ctx.ui.setStatus("research-run", `${summary[1]?.replace("状态：", "") ?? activeRun.status} · ${summary[2]?.replace("阶段：", "") ?? activeRun.stage}`);
     }
 
     function updateJobUi(ctx: ExtensionContext): void {
@@ -517,22 +655,22 @@ async function queryProject(client: CoreConnection, workspaceId: string, project
   return result.status === "ok" && result.data ? result.data : null;
 }
 
-async function queryProjects(client: CoreConnection, workspaceId: string): Promise<WorkspaceProjects> {
-  const result = await client.query<WorkspaceProjects>({
-    schemaVersion: PUBLIC_SCHEMA_VERSION,
-    queryId: `cli-${randomUUID()}`,
-    type: "workspace.projects",
-    workspaceId,
-    projectId: null,
-    actor: actor(),
-    limit: 100,
-  });
-  if (result.status !== "ok" || !result.data) throw new Error(result.error?.message ?? "workspace.projects query failed");
-  return result.data;
-}
-
 function actor() {
   return { id: "user:research-explorer", kind: "user", displayName: "Research Explorer user" } as const;
+}
+
+function inferSessionTitle(ctx: ExtensionContext): string {
+  const named = ctx.sessionManager.getSessionName()?.trim();
+  if (named && named.length >= 3) return named.slice(0, 80);
+  for (const entry of [...ctx.sessionManager.getBranch()].reverse()) {
+    const value = entry as { type?: string; message?: { role?: string; content?: unknown } };
+    if (value.type !== "message" || value.message?.role !== "user") continue;
+    const content = value.message.content;
+    const text = typeof content === "string" ? content : Array.isArray(content) ? content.filter((item): item is { type: "text"; text: string } => Boolean(item) && typeof item === "object" && (item as any).type === "text" && typeof (item as any).text === "string").map(item => item.text).join(" ") : "";
+    const cleaned = text.replace(/^\/[a-z-]+\s*/i, "").replace(/\s+/g, " ").trim();
+    if (cleaned.length >= 3) return cleaned.slice(0, 80);
+  }
+  return `研究会话 ${ctx.sessionManager.getSessionId().slice(0, 8)}`;
 }
 
 function formatDoctor(report: DoctorReport): string {
@@ -573,3 +711,6 @@ function stageLabel(status: string): string {
   };
   return labels[status] ?? "阶段未知";
 }
+
+function compactLabel(value: string, length: number): string { const text = value.replace(/\s+/g, " ").trim(); return text.length <= length ? text : `${text.slice(0, length - 1)}…`; }
+function formatSessionTime(value: Date): string { return value.toISOString().replace("T", " ").slice(0, 16); }
